@@ -5,7 +5,7 @@ import json
 import win32gui as W32
 import win32con
 import sys
-
+import ctypes
 
 class WinData:
     def __init__(self):
@@ -16,12 +16,20 @@ class WinData:
         self.list = []
         self.dumpinfo = False   # dump process simple information.
 
-    def ExcludeWinName(self, title: str, w, h):
+    @staticmethod
+    def ExcludeWinName(title: str, w, h):
         if (2 > len(title)): # 제목이 없거나 1자인 경우
             return True
         if (3 > w + h):    # 넓이 + 높이가 3 미만인 경우
             return True
         return False
+
+    @staticmethod
+    def GetWinScreen():
+        user32 = ctypes.windll.user32
+        screensize = user32.GetSystemMetrics(78), user32.GetSystemMetrics(79)
+        print("screensize: (%d, %d)" % (screensize))
+        return screensize
 
     def ShowWinInfo(self):
         cnt = 0
