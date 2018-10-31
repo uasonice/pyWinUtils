@@ -23,7 +23,7 @@ class WinPosManager:
         self.profile_name = tk.StringVar()
         self.removed = False
         self.is_load = False
-        self.wg_log_msg = tk.Text(height=3)
+        self.wg_log_msg = tk.Text()
 
     def get_root(self):
         if self.root is 0:
@@ -134,7 +134,7 @@ class WinPosManager:
         frame4.pack(fill=tk.BOTH)
         #wg_log_msg = tk.Text(frame4, height=3, state=tk.DISABLED)
         self.wg_log_msg.master = frame4
-        self.wg_log_msg.pack()
+        self.wg_log_msg.pack(fill=tk.BOTH)
         #scroll4 = tk.Scrollbar(frame4)
         #scroll4.pack(side=tk.RIGHT, fill=tk.Y)
         #self.wg_log_msg.pack(side=tk.LEFT, fill=tk.Y)
@@ -144,11 +144,13 @@ class WinPosManager:
         root.protocol("WM_DELETE_WINDOW", ui_on_closing)
         return root
 
-    def set_log_message(self, msg, cmd = 'insert'):
+    def set_log_message(self, add_time, msg, cmd = 'insert'):
         if cmd == 'insert':
             now = datetime.datetime.now()
-            #str_time = now.strftime("%Y%m%d %H:%M")
-            str_time = now.strftime("%H:%M:%S")
+            str_time = ''
+            if add_time:
+                #str_time = now.strftime("%Y%m%d %H:%M")
+                str_time = now.strftime("%H:%M:%S")
             self.wg_log_msg.config(state=tk.NORMAL)
             self.wg_log_msg.insert(tk.END, "\n%s %s" % (str_time, msg))
             self.wg_log_msg.see(tk.END)
@@ -166,10 +168,13 @@ def button_pressed(mgr, cmd):
     str = mgr.profile_name.get()
     if str == "": str = "data"
     print("profile: %s" % str)
-    mgr.set_log_message("%s %s" % (cmd, str))
+    mgr.set_log_message(True, "%s %s" % (cmd, str))
     mgr.data.set_profile_name(str)
     wp.winpos_main(mgr.data, cmd)
     #wp.main(["WinPosCore", cmd])
+    if len(mgr.data.logging_message) > 0:
+        mgr.set_log_message(False, mgr.data.logging_message)
+        mgr.data.logging_message = ''
 
 
 def ui_on_closing():
@@ -212,8 +217,8 @@ if __name__ == '__main__':
     try:
         hk.register(('super', 'control', 'z'), callback=lambda e: button_pressed(win_mgr, 'load'))
         hk.register(('super', 'control', 'x'), callback=lambda e: button_pressed(win_mgr, 'save'))
-    except :
-        print("already run this program")
+    except Exception as e:
+        print("already run this program: %s" % e)
         sys.exit(0)
 
     # app = threading.Thread(target=ShowUI)

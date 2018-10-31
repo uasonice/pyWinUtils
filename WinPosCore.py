@@ -9,6 +9,7 @@ import ctypes
 
 class WinData:
     profile_name: object
+    logging_message: str
 
     def __init__(self):
         self.version = "0.2"
@@ -17,6 +18,7 @@ class WinData:
         self.init_done = False
         self.cnt = 0
         self.list = []
+        self.logging_message = ""
 
         # config data information
         self.change_config = False
@@ -117,10 +119,12 @@ class WinData:
         for d in self.list:
             cnt += 1
             hwnd = W32.FindWindow(None, d['title'])
-
             if not hwnd:
-                self.printinfo("Removed %08X Window %s(%2d):" % (d['hwnd'], d['title'], len(d['title'])))
-                continue
+                err_msg = "Removed or Changed %08X Window %s(%2d):" % (d['hwnd'], d['title'], len(d['title']))
+                self.logging_message += err_msg
+                print(err_msg)
+                #continue
+                hwnd = d['hwnd']
             pos = d['pos'][0]
             try:
                 W32.SetWindowPos(hwnd, win32con.HWND_TOP, pos['x'], pos['y'], pos['w'], pos['h'], uflag)
@@ -155,7 +159,7 @@ class WinData:
             print("load config\n", conf)
             self.profile_name = conf['profile_name']
             #print(conf['profile_name'])
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             self.save_config(True)
         return
 
