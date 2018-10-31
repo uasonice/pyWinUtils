@@ -174,6 +174,7 @@ def winpos_main(windata: WinData, cmd: str):
     windata.init2()
 
     #cmd = ["show", "save", "load"]
+    print("select cmd: %s" % cmd)
 
     #windata.dumpinfo = True
     screen = windata.GetWinScreen()
@@ -202,7 +203,6 @@ def main(argv):
         print("default cmd: %s"% cmd)
     else:
         cmd = argv[1]
-        print("select cmd: %s"% cmd)
 
     winpos_main(windata, cmd)
     return 0

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf8 -*-
-
+import datetime
 import sys
 import threading
 import tkinter as tk
@@ -15,9 +15,15 @@ class WinPosManager:
     profile_name: tk.StringVar
     data: wp.WinData
 
+    # log message
+    wg_log_msg: tk.Text
+
     def __init__(self):
         self.root = tk.Tk()
         self.profile_name = tk.StringVar()
+        self.removed = False
+        self.is_load = False
+        self.wg_log_msg = tk.Text(height=3)
 
     def get_root(self):
         if self.root is 0:
@@ -25,9 +31,13 @@ class WinPosManager:
         return self.root
 
     def destroy(self):
-        if self.root is not 0:
-            self.root.destroy()
-            self.root = 0
+        if self.root is 0: return
+        if self.removed is False:
+            self.root.withdraw()
+            print("UI withdraw")
+            return
+        self.root.destroy()
+        self.root = 0
 
     def set_data(self, data: wp.WinData):
         assert isinstance(data, object)
@@ -75,6 +85,7 @@ class WinPosManager:
 
     def ui_load2(self):
         root = self.get_root()
+        self.config_load()
         my_width = 200
         my_height = 200
         margin_x = 100
@@ -87,6 +98,12 @@ class WinPosManager:
 
         root.title("WinPosManager")
         root.geometry("%dx%d+%d+%d" % (my_width, my_height, my_x, my_y))
+
+        if self.is_load is True:
+            print("UI redraw")
+            root.deiconify()
+            return
+        self.is_load = True
 
         lbl = tk.Label(root, text="Windows Position Manager")
         lbl.pack()
@@ -113,8 +130,32 @@ class WinPosManager:
         btn4 = tk.Button(frame3, text="Exit", width=12, command=lambda: self.destroy())
         btn4.pack(fill=tk.X, padx=2, expand=True)
 
+        frame4 = tk.Frame(root)
+        frame4.pack(fill=tk.BOTH)
+        #wg_log_msg = tk.Text(frame4, height=3, state=tk.DISABLED)
+        self.wg_log_msg.master = frame4
+        self.wg_log_msg.pack()
+        #scroll4 = tk.Scrollbar(frame4)
+        #scroll4.pack(side=tk.RIGHT, fill=tk.Y)
+        #self.wg_log_msg.pack(side=tk.LEFT, fill=tk.Y)
+        #scroll4.config(command=self.wg_log_msg.yview)
+        #self.wg_log_msg.config(yscrollcommand=scroll4.set)
+
         root.protocol("WM_DELETE_WINDOW", ui_on_closing)
         return root
+
+    def set_log_message(self, msg, cmd = 'insert'):
+        if cmd == 'insert':
+            now = datetime.datetime.now()
+            #str_time = now.strftime("%Y%m%d %H:%M")
+            str_time = now.strftime("%H:%M:%S")
+            self.wg_log_msg.config(state=tk.NORMAL)
+            self.wg_log_msg.insert(tk.END, "\n%s %s" % (str_time, msg))
+            self.wg_log_msg.see(tk.END)
+            self.wg_log_msg.config(state=tk.DISABLED)
+        elif cmd == 'clear':
+            self.wg_log_msg.delete(0, tk.END)
+
 
 #    @data.setter
 #    def data(self, value):
@@ -125,6 +166,7 @@ def button_pressed(mgr, cmd):
     str = mgr.profile_name.get()
     if str == "": str = "data"
     print("profile: %s" % str)
+    mgr.set_log_message("%s %s" % (cmd, str))
     mgr.data.set_profile_name(str)
     wp.winpos_main(mgr.data, cmd)
     #wp.main(["WinPosCore", cmd])
@@ -177,4 +219,5 @@ if __name__ == '__main__':
     # app = threading.Thread(target=ShowUI)
     # app.start()
     tray_menu()
+    win_mgr.removed = True
     win_mgr.data.save_config()
