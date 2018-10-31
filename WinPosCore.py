@@ -18,6 +18,7 @@ class WinData:
         self.init_done = False
         self.cnt = 0
         self.list = []
+        self.m_conf_file = "winposcore.conf"
         self.logging_message = ""
 
         # config data information
@@ -26,9 +27,9 @@ class WinData:
         self.dumpinfo = False   # dump process simple information.
 
     def init2(self):
-        if self.init_done is True: return
+        if self.init_done is True: return 0
         self.init_done = True
-        self.load_config()
+        return self.load_config()
 
     @property
     def get_profile_name(self):
@@ -84,10 +85,11 @@ class WinData:
         h = rect[3] - y
         title = W32.GetWindowText(hwnd)
         if self.ExcludeWinName(title, w, h) == True: return
+        """
         if 0 < title.find("cmd.exe"):            # remove cmd console process
             print("remove cmd console process: %08X %s" % (hwnd, title))
             return
-
+        """
         l = {
             "hwnd": hwnd,
             "title": title,
@@ -135,33 +137,34 @@ class WinData:
             self.printinfo("₩tLocation: %d (%d, %d) - Size: (%d, %d)" % (cnt, pos['x'], pos['y'], pos['w'], pos['h']))
         return
 
-    def save_config(self, forced: bool = False):
+    def save_config(self, forced: bool=False, p_conf=''):
         # 변경 사항이 있는지 확인 하여, 있을 때만 파일을 저장한다.
         if forced is False and self.change_config is False: return
         self.change_config = False
 
         conf = {
-            "profile_name": self.profile_name,
-            "username": "login username",
+            "config_version":   self.version,
+            "profile_name":     self.profile_name,
+            "username":         "login username",
         }
-        conffile = "winposcore.conf"
-        with open(conffile, 'w') as outfile:
+        if len(p_conf) > 0:
+            conf['manager'] = p_conf
+        with open(self.m_conf_file, 'w') as outfile:
             json.dump(conf, outfile, indent=4)
 
-        print("config saved: %s" % conffile)
+        print("config saved: %s" % self.m_conf_file)
         return
 
     def load_config(self):
-        conffile = "winposcore.conf"
         try:
-            json_data = open(conffile, encoding='utf-8').read()
+            json_data = open(self.m_conf_file, encoding='utf-8').read()
             conf = json.loads(json_data)
             print("load config\n", conf)
             self.profile_name = conf['profile_name']
             #print(conf['profile_name'])
         except FileNotFoundError as e:
             self.save_config(True)
-        return
+        return conf
 
 
 def cbWinShowInfo(hwnd, data: WinData):

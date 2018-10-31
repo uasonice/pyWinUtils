@@ -14,6 +14,10 @@ class WinPosManager:
     root: tk.Tk
     profile_name: tk.StringVar
     data: wp.WinData
+    m_width: int
+    m_height: int
+    m_margin_x: int
+    m_margin_y: int
 
     # log message
     wg_log_msg: tk.Text
@@ -24,6 +28,10 @@ class WinPosManager:
         self.removed = False
         self.is_load = False
         self.wg_log_msg = tk.Text()
+        self.m_width = 200
+        self.m_height = 200
+        self.m_margin_x = 100
+        self.m_margin_y = 100
 
     def get_root(self):
         if self.root is 0:
@@ -36,34 +44,52 @@ class WinPosManager:
             self.root.withdraw()
             print("UI withdraw")
             return
+        self.config_save()
         self.root.destroy()
         self.root = 0
 
     def set_data(self, data: wp.WinData):
         assert isinstance(data, object)
         self.data = data
-        data.init2()
-        self.config_load()
+        conf = data.init2()
+        self.config_load(conf)
 
-    def config_load(self):
+    def config_load(self, conf: dict=None):
         self.profile_name.set(self.data.get_profile_name)
+        if conf and conf.get('manager'):
+            pos = conf['manager']['pos']
+            self.m_width =  pos['w']
+            self.m_height = pos['h']
+            self.m_margin_x = pos['margin_x']
+            self.m_margin_y = pos['margin_y']
         #print("coredata: profile(%s)" % self.data.get_profile_name)
         #print("config_load: profile(%s)" % (self.profile_name.get()))
 
+    def config_save(self):
+        # check change config
+        if self.data.change_config is False: return
+        conf = {'pos': {
+            'w': self.m_width,
+            'h': self.m_height,
+            'margin_x': self.m_margin_x,
+            'margin_y': self.m_margin_y,
+        }}
+        self.data.save_config(p_conf=conf)
+
     def ui_load(self):
         root = self.get_root()
-        my_width = 200
-        my_height = 200
-        margin_x = 100
-        margin_y = 100
+        self.m_width = 200
+        self.m_height = 200
+        self.m_margin_x = 100
+        self.m_margin_y = 100
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()
-        my_x = screen_width - my_width - margin_x
-        my_y = screen_height - my_height - margin_y
+        my_x = screen_width - self.m_width - self.m_margin_x
+        my_y = screen_height - self.m_height - self.m_margin_y
         print("X:Y(%d:%d) - width x height: (%dx%d)" % (my_x, my_y, screen_width, screen_height))
 
         root.title("WinPosManager")
-        root.geometry("%dx%d+%d+%d" % (my_width, my_height, my_x, my_y))
+        root.geometry("%dx%d+%d+%d" % (self.m_width, self.m_height, my_x, my_y))
 
         lbl = tk.Label(root, text="Windows Position Manager")
         lbl.pack()
@@ -80,24 +106,51 @@ class WinPosManager:
         btn4 = tk.Button(root, text="Exit", width=20, command=lambda: self.destroy())
         btn4.pack()
 
-        root.protocol("WM_DELETE_WINDOW", ui_on_closing)
+        root.protocol("WM_DELETE", self.ui_on_closing)
         return root
+
+    @staticmethod
+    def ui_on_closing():
+        print("UI close event")
+        win_mgr.destroy()
+
+    @staticmethod
+    def ui_on_move(event):
+        #print("UI move event")
+        root = win_mgr.get_root()
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        now_width = root.winfo_width()
+        now_height = root.winfo_height()
+        now_x = root.winfo_x()
+        now_y = root.winfo_y()
+        now_margin_x = screen_width - now_width - now_x
+        now_margin_y = screen_height - now_height - now_y
+        if win_mgr.m_margin_x != now_margin_x:
+            win_mgr.m_margin_x = now_margin_x
+            win_mgr.data.change_config = True
+        if win_mgr.m_margin_y != now_margin_y:
+            win_mgr.m_margin_y = now_margin_y
+            win_mgr.data.change_config = True
+        if win_mgr.m_width != now_width:
+            win_mgr.m_width = now_width
+            win_mgr.data.change_config = True
+        if win_mgr.m_height != now_height:
+            win_mgr.m_height = now_height
+            win_mgr.data.change_config = True
 
     def ui_load2(self):
         root = self.get_root()
         self.config_load()
-        my_width = 200
-        my_height = 200
-        margin_x = 100
-        margin_y = 100
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()
-        my_x = screen_width - my_width - margin_x
-        my_y = screen_height - my_height - margin_y
+        my_x = screen_width - self.m_width - self.m_margin_x
+        my_y = screen_height - self.m_height - self.m_margin_y
         print("X:Y(%d:%d) - width x height: (%dx%d)" % (my_x, my_y, screen_width, screen_height))
 
         root.title("WinPosManager")
-        root.geometry("%dx%d+%d+%d" % (my_width, my_height, my_x, my_y))
+        root.geometry("%dx%d+%d+%d" % (self.m_width, self.m_height, my_x, my_y))
+        root.resizable(False, False)
 
         if self.is_load is True:
             print("UI redraw")
@@ -114,45 +167,52 @@ class WinPosManager:
         lbl1.pack(side=tk.LEFT, padx=2, pady=2)
 
         entry1 = tk.Entry(frame1, width=13, textvariable=self.profile_name)
-        entry1.pack(fill=tk.X, padx=10, expand=True)
+        entry1.pack(side=tk.LEFT, fill=tk.X, padx=10)
 
         frame2 = tk.Frame(root)
         frame2.pack(fill=tk.X)
-        btn = tk.Button(frame2, text="Save", width=20, command=lambda: button_pressed(self, 'save'))
-        btn.pack()
-        btn2 = tk.Button(frame2, text="Load", width=20, command=lambda: button_pressed(self, 'load'))
-        btn2.pack()
+        btn2_1 = tk.Button(frame2, text="Save", width=20, command=lambda: button_pressed(self, 'save'))
+        btn2_1.grid(row=0, column=0, padx=5)
+        btn2_2 = tk.Button(frame2, text="Load", width=20, command=lambda: button_pressed(self, 'load'))
+        btn2_2.grid(row=1, column=0, padx=5)
 
         frame3 = tk.Frame(root)
         frame3.pack(fill=tk.X)
-        btn3 = tk.Button(frame3, text="Show", width=12, command=lambda: button_pressed(self, 'show'))
-        btn3.pack(side=tk.LEFT, padx=2, pady=2)
-        btn4 = tk.Button(frame3, text="Exit", width=12, command=lambda: self.destroy())
-        btn4.pack(fill=tk.X, padx=2, expand=True)
+        btn3_1 = tk.Button(frame3, text="Show", width=12, command=lambda: button_pressed(self, 'show'))
+        btn3_1.grid(row=0, column=0, padx=5)
+        btn3_2 = tk.Button(frame3, text="Exit", width=12, command=lambda: self.destroy())
+        btn3_2.grid(row=0, column=1, padx=5)
 
         frame4 = tk.Frame(root)
         frame4.pack(fill=tk.BOTH)
         #wg_log_msg = tk.Text(frame4, height=3, state=tk.DISABLED)
         self.wg_log_msg.master = frame4
         self.wg_log_msg.pack(fill=tk.BOTH)
-        #scroll4 = tk.Scrollbar(frame4)
-        #scroll4.pack(side=tk.RIGHT, fill=tk.Y)
-        #self.wg_log_msg.pack(side=tk.LEFT, fill=tk.Y)
-        #scroll4.config(command=self.wg_log_msg.yview)
-        #self.wg_log_msg.config(yscrollcommand=scroll4.set)
+        """
+        scroll4 = tk.Scrollbar(frame4)
+        scroll4.pack(side=tk.RIGHT, fill=tk.Y)
+        self.wg_log_msg.pack(side=tk.LEFT, fill=tk.Y)
+        scroll4.config(command=self.wg_log_msg.yview)
+        self.wg_log_msg.config(yscrollcommand=scroll4.set)
+        """
 
-        root.protocol("WM_DELETE_WINDOW", ui_on_closing)
+        root.protocol("WM_DELETE_WINDOW", self.ui_on_closing)
+        root.bind('<B1-Motion>', self.ui_on_move)
+        root.bind('<Configure>', self.ui_on_move)
         return root
 
-    def set_log_message(self, add_time, msg, cmd = 'insert'):
+    def set_log_message(self, add_time, msg, cmd='insert'):
         if cmd == 'insert':
             now = datetime.datetime.now()
-            str_time = ''
+            log_msg = ''
+            if len(self.wg_log_msg.get(0.0, tk.END)) > 1:
+                log_msg = "\n"
             if add_time:
-                #str_time = now.strftime("%Y%m%d %H:%M")
-                str_time = now.strftime("%H:%M:%S")
+                #log_msg += now.strftime("%Y%m%d %H:%M ")
+                log_msg += now.strftime("%H:%M:%S ")
+            log_msg += msg
             self.wg_log_msg.config(state=tk.NORMAL)
-            self.wg_log_msg.insert(tk.END, "\n%s %s" % (str_time, msg))
+            self.wg_log_msg.insert(tk.END, log_msg)
             self.wg_log_msg.see(tk.END)
             self.wg_log_msg.config(state=tk.DISABLED)
         elif cmd == 'clear':
@@ -177,14 +237,7 @@ def button_pressed(mgr, cmd):
         mgr.data.logging_message = ''
 
 
-def ui_on_closing():
-    global win_mgr
-    print("UI close event")
-    win_mgr.destroy()
-
-
 def ui_show():
-    global win_mgr
     #root = win_mgr.ui_load()
     root = win_mgr.ui_load2()
     root.mainloop()
@@ -202,8 +255,8 @@ def tray_menu():
     )
 
     def bye(sys_trayIcon):
-        global win_mgr
         print('Bye, then.')
+        #win_mgr.data.save_config()
         win_mgr.destroy()
 
     tray.SysTrayIcon(next(icons), hover_text, menu_options, on_quit=bye, default_menu_index=1)
@@ -225,4 +278,3 @@ if __name__ == '__main__':
     # app.start()
     tray_menu()
     win_mgr.removed = True
-    win_mgr.data.save_config()
