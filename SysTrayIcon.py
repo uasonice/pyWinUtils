@@ -26,12 +26,14 @@ class SysTrayIcon(object):
                  hover_text,
                  menu_options,
                  on_quit=None,
+                 on_click=None,
                  default_menu_index=None,
                  window_class_name=None,):
 
         self.icon = icon
         self.hover_text = hover_text
         self.on_quit = on_quit
+        self.on_click = on_click
 
         menu_options = menu_options + (('Quit', None, self.QUIT),)
         self._next_action_id = self.FIRST_ID
@@ -137,6 +139,7 @@ class SysTrayIcon(object):
         return True
 
     def show_menu(self):
+        if self.on_click: self.on_click(self)
         menu = win32gui.CreatePopupMenu()
         self.create_menu(menu, self.menu_options)
         #win32gui.SetMenuDefaultItem(menu, 1000, 0)

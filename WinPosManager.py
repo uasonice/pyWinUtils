@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf8 -*-
+import win32gui
 from io import StringIO
 import datetime
 import sys
@@ -36,6 +37,7 @@ class WinPosManager(wp.WinData):
         self.m_height = 200
         self.m_margin_x = 100
         self.m_margin_y = 100
+        self.pos_mouse = None
 
     def get_root(self):
         if self.root is 0:
@@ -77,35 +79,14 @@ class WinPosManager(wp.WinData):
 
     def ui_load(self):
         root = self.get_root()
-        self.m_width = 200
-        self.m_height = 200
-        self.m_margin_x = 100
-        self.m_margin_y = 100
-        screen_width = root.winfo_screenwidth()
-        screen_height = root.winfo_screenheight()
-        my_x = screen_width - self.m_width - self.m_margin_x
-        my_y = screen_height - self.m_height - self.m_margin_y
-        print("X:Y(%d:%d) - width x height: (%dx%d)" % (my_x, my_y, screen_width, screen_height))
-
         root.title("WinPosManager")
-        root.geometry("%dx%d+%d+%d" % (self.m_width, self.m_height, my_x, my_y))
-
-        lbl = tk.Label(root, text="Windows Position Manager")
-        lbl.pack()
-
-        btn = tk.Button(root, text="Save", width=20, command=lambda: button_pressed(self, 'save'))
-        btn.pack()
-
-        btn2 = tk.Button(root, text="Load", width=20, command=lambda: button_pressed(self, 'load'))
-        btn2.pack()
-
-        btn3 = tk.Button(root, text="Show", width=20, command=lambda: button_pressed(self, 'show'))
-        btn3.pack()
-
-        btn4 = tk.Button(root, text="Exit", width=20, command=lambda: self.destroy())
-        btn4.pack()
-
-        root.protocol("WM_DELETE", self.ui_on_closing)
+        self.ui_calc_geometry()
+        tk.Label(root, text="Windows Position Manager").pack()
+        tk.Button(root, text="Save", width=20, command=lambda: button_pressed(self, 'save')).pack()
+        tk.Button(root, text="Load", width=20, command=lambda: button_pressed(self, 'load')).pack()
+        tk.Button(root, text="Show", width=20, command=lambda: button_pressed(self, 'show')).pack()
+        tk.Button(root, text="Exit", width=20, command=lambda: self.destroy()).pack()
+        root.protocol("WM_DELETE", self.destroy)
         return root
 
     def ui_on_move(self, event):
@@ -132,19 +113,25 @@ class WinPosManager(wp.WinData):
             self.change_config = True
         print("UI Move or resize event - changed: ", self.change_config)
 
+    def ui_calc_geometry(self, x=0, y=0):
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        my_x = screen_width - self.m_width - self.m_margin_x
+        my_y = screen_height - self.m_height - self.m_margin_y
+        if x is not 0 and x + self.m_width <= screen_width: my_x = x
+        if y is not 0 and x + self.m_height <= screen_height: my_y = y
+        print("X:Y(%d:%d) - width x height: (%dx%d)" % (my_x, my_y, screen_width, screen_height))
+
+        self.root.geometry("%dx%d+%d+%d" % (self.m_width, self.m_height, my_x, my_y))
+
     def ui_load2(self):
         root = self.get_root()
         self.config_load()
-        screen_width = root.winfo_screenwidth()
-        screen_height = root.winfo_screenheight()
-        my_x = screen_width - self.m_width - self.m_margin_x
-        my_y = screen_height - self.m_height - self.m_margin_y
-        print("X:Y(%d:%d) - width x height: (%dx%d)" % (my_x, my_y, screen_width, screen_height))
 
         root.overrideredirect(True)
         root.title("WinPosManager")
-        root.geometry("%dx%d+%d+%d" % (self.m_width, self.m_height, my_x, my_y))
         root.resizable(False, False)
+        self.ui_calc_geometry()
 
         if self.is_load is True:
             print("UI redraw")
@@ -191,13 +178,6 @@ class WinPosManager(wp.WinData):
         #wg_log_msg = tk.Text(frame4, height=3, state=tk.DISABLED)
         self.wg_log_msg.master = frame4
         self.wg_log_msg.pack(fill=tk.BOTH)
-        """
-        scroll4 = tk.Scrollbar(frame4)
-        scroll4.pack(side=tk.RIGHT, fill=tk.Y)
-        self.wg_log_msg.pack(side=tk.LEFT, fill=tk.Y)
-        scroll4.config(command=self.wg_log_msg.yview)
-        self.wg_log_msg.config(yscrollcommand=scroll4.set)
-        """
 
         def ui_on_closing():
             print("UI close event")
@@ -268,8 +248,9 @@ def button_pressed(mgr, cmd):
         mgr.logging_message = ''
 
 
-def ui_show():
+def ui_show(sys_tray):
     root = win_mgr.ui_load2()
+    win_mgr.ui_calc_geometry(win_mgr.pos_mouse[0])
     if root:
         root.mainloop()
 
@@ -280,11 +261,14 @@ def tray_menu():
     icons = itertools.cycle(glob.glob('data/*.ico'))
     hover_text = "WinPosMgr"
     menu_options = (
-        ('Show', None, lambda sys_tray: ui_show()),
+        ('Show', None, lambda sys_tray: ui_show(sys_tray)),
         ('Save', None, lambda sys_tray: button_pressed(win_mgr, 'save')),
         ('Load', None, lambda sys_tray: button_pressed(win_mgr, 'load')),
         ('Clear log', None, lambda sys_tray: win_mgr.set_log_message('', '', cmd='clear')),
     )
+
+    def get_click(sys_trayicon):
+        win_mgr.pos_mouse = win32gui.GetCursorPos()
 
     def bye(sys_trayIcon):
         print('Bye, Bye.')
@@ -292,7 +276,7 @@ def tray_menu():
         win_mgr.removed = True
         win_mgr.destroy()
 
-    tray.SysTrayIcon(next(icons), hover_text, menu_options, on_quit=bye, default_menu_index=1)
+    tray.SysTrayIcon(next(icons), hover_text, menu_options, on_quit=bye, default_menu_index=1, on_click=get_click)
     if win_mgr:
         win_mgr.removed = True
         win_mgr.destroy()

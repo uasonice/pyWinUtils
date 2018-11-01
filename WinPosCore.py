@@ -2,7 +2,7 @@
 # -*- coding: utf8 -*-
 
 import json
-import win32gui as W32
+import win32gui
 import win32con
 import sys
 import ctypes
@@ -66,25 +66,25 @@ class WinData(object):
         return
 
     def ShowWinInfo_sys(self, hwnd):
-        rect = W32.GetWindowRect(hwnd)
+        rect = win32gui.GetWindowRect(hwnd)
         x = rect[0]
         y = rect[1]
         w = rect[2] - x
         h = rect[3] - y
-        title = W32.GetWindowText(hwnd)
+        title = win32gui.GetWindowText(hwnd)
         if self.ExcludeWinName(title, w, h) == True: return
         self.cnt += 1
-        print("Window %s:" % W32.GetWindowText(hwnd))
+        print("Window %s:" % win32gui.GetWindowText(hwnd))
         print("₩tLocation: %d (%d, %d) - Size: (%d, %d)" % (self.cnt, x, y, w, h))
         return
 
     def SaveWinInfo(self, hwnd):
-        rect = W32.GetWindowRect(hwnd)
+        rect = win32gui.GetWindowRect(hwnd)
         x = rect[0]
         y = rect[1]
         w = rect[2] - x
         h = rect[3] - y
-        title = W32.GetWindowText(hwnd)
+        title = win32gui.GetWindowText(hwnd)
         if self.ExcludeWinName(title, w, h) == True: return
         """
         if 0 < title.find("cmd.exe"):            # remove cmd console process
@@ -121,7 +121,7 @@ class WinData(object):
         uflag = win32con.SWP_NOZORDER
         for d in self.list:
             cnt += 1
-            hwnd = W32.FindWindow(None, d['title'])
+            hwnd = win32gui.FindWindow(None, d['title'])
             if not hwnd:
                 err_msg = "Removed or Changed %08X Window %s(%2d):" % (d['hwnd'], d['title'], len(d['title']))
                 self.logging_message += err_msg
@@ -130,7 +130,7 @@ class WinData(object):
                 hwnd = d['hwnd']
             pos = d['pos'][0]
             try:
-                W32.SetWindowPos(hwnd, win32con.HWND_TOP, pos['x'], pos['y'], pos['w'], pos['h'], uflag)
+                win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, pos['x'], pos['y'], pos['w'], pos['h'], uflag)
             except:
                 self.printinfo("Exception %08X Window %s(%2d):" % (d['hwnd'], d['title'], len(d['title'])))
 
@@ -185,14 +185,14 @@ def winpos_main(windata: WinData, cmd: str):
 
     #windata.dumpinfo = True
     if cmd == "show":
-        W32.EnumWindows(cbWinShowInfo, windata)
+        win32gui.EnumWindows(cbWinShowInfo, windata)
         return 0
 
     screen = windata.GetWinScreen()
     datafile = "winpos%s_%dx%d.json" % (windata.profile_name, screen[0], screen[1])
     print("datafile name: %s" % datafile)
     if cmd == "save":        # 저장
-        W32.EnumWindows(cbWinSave, windata)
+        win32gui.EnumWindows(cbWinSave, windata)
         with open(datafile, 'w') as outfile:
             json.dump(windata.list, outfile, indent=4)
         windata.ShowWinInfo()
