@@ -7,7 +7,8 @@ import win32con
 import sys
 import ctypes
 
-class WinData:
+
+class WinData(object):
     profile_name: object
     logging_message: str
 
@@ -177,27 +178,26 @@ def cbWinSave(hwnd, data: WinData):
 
 
 def winpos_main(windata: WinData, cmd: str):
-    #windata = WinData()
     windata.init2()
 
     #cmd = ["show", "save", "load"]
     print("select cmd: %s" % cmd)
 
     #windata.dumpinfo = True
+    if cmd == "show":
+        W32.EnumWindows(cbWinShowInfo, windata)
+        return 0
+
     screen = windata.GetWinScreen()
     datafile = "winpos%s_%dx%d.json" % (windata.profile_name, screen[0], screen[1])
     print("datafile name: %s" % datafile)
-    if cmd == "show":
-        W32.EnumWindows(cbWinShowInfo, windata)
-
     if cmd == "save":        # 저장
         W32.EnumWindows(cbWinSave, windata)
         with open(datafile, 'w') as outfile:
             json.dump(windata.list, outfile, indent=4)
         windata.ShowWinInfo()
-    if cmd == "load":        # 불러오기
+    elif cmd == "load":        # 불러오기
         windata.LoadWinInfo(datafile)
-    windata.save_config()
     return 0
 
 
@@ -212,6 +212,7 @@ def main(argv):
         cmd = argv[1]
 
     winpos_main(windata, cmd)
+    windata.save_config()
     return 0
 
 
