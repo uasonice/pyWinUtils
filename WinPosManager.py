@@ -31,13 +31,14 @@ class WinPosManager(wp.WinData):
         self.popup = None
         self.wg_str_profile_name = tk.StringVar()
         self.removed = False
-        self.is_load = False
+        self.is_ui_load = False
+        self.is_ui_show = False
         self.wg_log_msg = tk.Text()
         self.m_width = 200
         self.m_height = 200
         self.m_margin_x = 100
         self.m_margin_y = 100
-        self.pos_mouse = None
+        self.pos_mouse = (0, 0)
 
     def get_root(self):
         if self.root is 0:
@@ -47,8 +48,7 @@ class WinPosManager(wp.WinData):
     def destroy(self):
         if self.root is 0: return
         if self.removed is False:
-            self.root.withdraw()
-            print("UI withdraw")
+            self.ui_show_toggle()
             return
         self.config_save()
         self.root.destroy()
@@ -57,14 +57,14 @@ class WinPosManager(wp.WinData):
     def config_load(self):
         conf = self.init2()
         self.wg_str_profile_name.set(self.get_profile_name)
+        #print("coredata: profile(%s)" % self.get_profile_name)
+        #print("config_load: profile(%s)" % (self.wg_str_profile_name.get()))
         if conf and conf.get('manager'):
             pos = conf['manager']['pos']
             self.m_width =  pos['w']
             self.m_height = pos['h']
             self.m_margin_x = pos['margin_x']
             self.m_margin_y = pos['margin_y']
-        #print("coredata: profile(%s)" % self.get_profile_name)
-        #print("config_load: profile(%s)" % (self.wg_str_profile_name.get()))
 
     def config_save(self):
         # check change config
@@ -124,6 +124,19 @@ class WinPosManager(wp.WinData):
 
         self.root.geometry("%dx%d+%d+%d" % (self.m_width, self.m_height, my_x, my_y))
 
+    def ui_show_toggle(self):
+        if self.is_ui_load is False: return False
+        if self.is_ui_show:
+            print("UI withdraw")
+            self.root.withdraw()
+            self.is_ui_show = False
+        else:
+            print("UI redraw")
+            self.root.deiconify()
+            self.root.focus_set()
+            self.is_ui_show = True
+        return True
+
     def ui_load2(self):
         root = self.get_root()
         self.config_load()
@@ -133,11 +146,9 @@ class WinPosManager(wp.WinData):
         root.resizable(False, False)
         self.ui_calc_geometry()
 
-        if self.is_load is True:
-            print("UI redraw")
-            root.deiconify()
-            return
-        self.is_load = True
+        if self.ui_show_toggle() is True: return
+        self.is_ui_load = True
+        self.is_ui_show = True
 
         lbl = tk.Label(root, text="Windows Position Manager")
         lbl.pack()
@@ -186,7 +197,8 @@ class WinPosManager(wp.WinData):
         root.protocol("WM_DELETE_WINDOW", ui_on_closing)
         root.bind('<B1-Motion>', lambda ev: self.ui_on_move(ev))
         root.bind('<Configure>', lambda ev: self.ui_on_move(ev))
-        root.bind("<Escape>", lambda ev: root.withdraw())
+        root.bind("<Escape>", lambda ev: self.ui_show_toggle())
+        root.focus_set()
 
         return root
 
@@ -208,6 +220,7 @@ class WinPosManager(wp.WinData):
         text_msg.config(state=tk.DISABLED)
         #self.popup.bind("<Key>", lambda ev: self.popup.withdraw())
         self.popup.bind("<Escape>", lambda ev: self.popup.withdraw())
+        self.popup.focus_set()
 
     def set_log_message(self, add_time, msg, cmd='insert'):
         if cmd == 'insert':
@@ -288,8 +301,9 @@ win_mgr.config_load()
 if __name__ == '__main__':
     hk = system_hotkey.SystemHotkey()
     try:
-        hk.register(('super', 'control', 'z'), callback=lambda e: button_pressed(win_mgr, 'load'))
-        hk.register(('super', 'control', 'x'), callback=lambda e: button_pressed(win_mgr, 'save'))
+        hk.register(('super', 'control', 'z'), callback=lambda ev: button_pressed(win_mgr, 'load'))
+        hk.register(('super', 'control', 'x'), callback=lambda ev: button_pressed(win_mgr, 'save'))
+        hk.register(('super', 'control', 'a'), callback=lambda ev: ui_show(ev))
     except Exception as e:
         print("already run this program: %s" % e)
         sys.exit(0)
