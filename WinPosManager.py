@@ -7,6 +7,7 @@ import os, sys
 import threading
 import tkinter as tk
 
+import SysRegEdit
 import SysRunAdmin
 import WinPosCore as wp
 import SysTrayIcon as tray
@@ -315,7 +316,9 @@ win_mgr = WinPosManager()
 win_mgr.config_load()
 
 if __name__ == '__main__':
+    os.chdir(os.path.dirname(__file__))
     #run_as_admin()
+    #SysRegEdit.execute(__file__)
     hk = system_hotkey.SystemHotkey()
     try:
         hk.register(('super', 'control', 'z'), callback=lambda ev: button_pressed(win_mgr, 'load'))

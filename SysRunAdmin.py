@@ -13,9 +13,12 @@ def isUserAdmin():
 
     if os.name == 'nt':
         import ctypes
+        import win32security
         # WARNING: requires Windows XP SP2 or higher!
         try:
-            return ctypes.windll.shell32.IsUserAnAdmin()
+            adminSid = win32security.CreateWellKnownSid(win32security.WinBuiltinAdministratorsSid, None)
+            return win32security.CheckTokenMembership(None, adminSid)
+            #return ctypes.windll.shell32.IsUserAnAdmin()
         except:
             traceback.print_exc()
             print("Admin check failed, assuming not an admin.")
@@ -24,12 +27,12 @@ def isUserAdmin():
         # Check for root on Posix
         return os.getuid() == 0
     else:
-        raise(RuntimeError, "Unsupported operating system for this module: %s" % (os.name,))
+        raise RuntimeError("Unsupported operating system for this module: %s" % (os.name,))
 
 def runAsAdmin(cmdLine=None, wait=True):
 
     if os.name != 'nt':
-        raise(RuntimeError, "This function is only implemented on Windows.")
+        raise RuntimeError("This function is only implemented on Windows.")
 
     import win32api, win32con, win32event, win32process
     from win32com.shell.shell import ShellExecuteEx
@@ -40,7 +43,7 @@ def runAsAdmin(cmdLine=None, wait=True):
     if cmdLine is None:
         cmdLine = [python_exe] + sys.argv
     elif type(cmdLine) not in (types.TupleType,types.ListType):
-        raise(ValueError, "cmdLine is not a sequence.")
+        raise ValueError("cmdLine is not a sequence.")
     cmd = '"%s"' % (cmdLine[0],)
     # XXX TODO: isn't there a function or something we can call to massage command line params?
     params = " ".join(['"%s"' % (x,) for x in cmdLine[1:]])
