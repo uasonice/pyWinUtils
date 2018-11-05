@@ -150,8 +150,20 @@ class WinPosManager(wp.WinData):
         self.is_ui_load = True
         self.is_ui_show = True
 
-        lbl = tk.Label(root, text="Windows Position Manager")
-        lbl.pack()
+        def toggle_title():
+            if root.overrideredirect():
+                root.overrideredirect(False)
+            else:
+                root.overrideredirect(True)
+
+        frame0 = tk.Frame(root)
+        frame0.pack(fill=tk.X)
+        lbl = tk.Label(frame0, text="Windows Position Manager")
+        lbl.grid(row=0, column=0, padx=7)
+        btn0_1 = tk.Button(frame0, text="T", width=1, command=lambda: toggle_title())
+        btn0_1.grid(row=0, column=1)
+        btn0_2 = tk.Button(frame0, text="X", width=1, command=lambda: self.destroy())
+        btn0_2.grid(row=0, column=2)
 
         frame1 = tk.Frame(root)
         frame1.pack(fill=tk.X)
@@ -163,26 +175,17 @@ class WinPosManager(wp.WinData):
 
         frame2 = tk.Frame(root)
         frame2.pack(fill=tk.X)
-        btn2_1 = tk.Button(frame2, text="Save", width=20, command=lambda: button_pressed(self, 'save'))
-        btn2_1.grid(row=0, column=0, padx=5)
-
-        def toggle_title():
-            if root.overrideredirect():
-                root.overrideredirect(False)
-            else:
-                root.overrideredirect(True)
-        btn2_1_2 = tk.Button(frame2, text="titl", width=3, command=lambda: toggle_title())
-        btn2_1_2.grid(row=0, column=1, padx=1)
-
-        btn2_2 = tk.Button(frame2, text="Load", width=20, command=lambda: button_pressed(self, 'load'))
-        btn2_2.grid(row=1, column=0, padx=5)
+        btn2_1 = tk.Button(frame2, text="Save", width=12, command=lambda: button_pressed(self, 'save'))
+        btn2_1.grid(row=0, column=0, padx=3, pady=3)
+        btn2_2 = tk.Button(frame2, text="Load", width=12, command=lambda: button_pressed(self, 'load'))
+        btn2_2.grid(row=0, column=1, padx=3)
 
         frame3 = tk.Frame(root)
         frame3.pack(fill=tk.X)
         btn3_1 = tk.Button(frame3, text="Show", width=12, command=lambda: button_pressed(self, 'show'))
-        btn3_1.grid(row=0, column=0, padx=5)
-        btn3_2 = tk.Button(frame3, text="Exit", width=12, command=lambda: self.destroy())
-        btn3_2.grid(row=0, column=1, padx=5)
+        btn3_1.grid(row=0, column=0, padx=3)
+        btn3_2 = tk.Button(frame3, text="Close", width=12, command=lambda: self.destroy())
+        btn3_2.grid(row=0, column=1, padx=3)
 
         frame4 = tk.Frame(root)
         frame4.pack(fill=tk.BOTH)
