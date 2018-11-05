@@ -3,9 +3,11 @@
 import win32gui
 from io import StringIO
 import datetime
-import sys
+import os, sys
 import threading
 import tkinter as tk
+
+import SysRunAdmin
 import WinPosCore as wp
 import SysTrayIcon as tray
 import system_hotkey
@@ -271,6 +273,13 @@ def ui_show(sys_tray):
         root.mainloop()
 
 
+def ui_resizer(sys_tray):
+    hwnd = win32gui.GetForegroundWindow()
+    print("current win id: ", hwnd)
+    str = win32gui.GetWindowText(hwnd)
+    print("current win name: ", str)
+
+
 def tray_menu():
     import itertools, glob
 
@@ -297,16 +306,22 @@ def tray_menu():
         win_mgr.removed = True
         win_mgr.destroy()
 
+def run_as_admin():
+    if not SysRunAdmin.isUserAdmin():
+        print("You're not an admin.", os.getpid(), "params: ", sys.argv)
+        rc = SysRunAdmin.runAsAdmin()
 
 win_mgr = WinPosManager()
 win_mgr.config_load()
 
 if __name__ == '__main__':
+    #run_as_admin()
     hk = system_hotkey.SystemHotkey()
     try:
         hk.register(('super', 'control', 'z'), callback=lambda ev: button_pressed(win_mgr, 'load'))
         hk.register(('super', 'control', 'x'), callback=lambda ev: button_pressed(win_mgr, 'save'))
         hk.register(('super', 'control', 'a'), callback=lambda ev: ui_show(ev))
+        hk.register(('super', 'control', 't'), callback=lambda ev: ui_resizer(ev))
     except Exception as e:
         print("already run this program: %s" % e)
         sys.exit(0)
