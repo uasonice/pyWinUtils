@@ -111,7 +111,7 @@ class WinPosManager(wp.WinData):
         if self.m_height != now_height:
             self.m_height = now_height
             self.change_config = True
-        print("UI Move or resize event - changed: ", self.change_config)
+        #print("UI Move or resize event - changed: ", self.change_config)
 
     def ui_calc_geometry(self, x=0, y=0):
         screen_width = self.root.winfo_screenwidth()
