@@ -189,7 +189,7 @@ def winpos_main(windata: WinData, cmd: str):
         return 0
 
     screen = windata.GetWinScreen()
-    datafile = "winpos%s_%dx%d.json" % (windata.profile_name, screen[0], screen[1])
+    datafile = "winpos_%s_%dx%d.json" % (windata.profile_name, screen[0], screen[1])
     print("datafile name: %s" % datafile)
     if cmd == "save":        # 저장
         win32gui.EnumWindows(cbWinSave, windata)
