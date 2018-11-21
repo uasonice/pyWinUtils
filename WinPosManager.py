@@ -1,13 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf8 -*-
 import win32gui
+import win32con
 from io import StringIO
 import datetime
 import os, sys
 import threading
 import tkinter as tk
-
-import win32con
 
 import SysRegEdit
 import SysRunAdmin
@@ -25,6 +24,7 @@ class WinPosManager(wp.WinData):
     m_height: int
     m_margin_x: int
     m_margin_y: int
+    m_win: int
 
     # log message
     wg_log_msg: tk.Text
@@ -44,6 +44,12 @@ class WinPosManager(wp.WinData):
         self.m_margin_x = 100
         self.m_margin_y = 100
         self.pos_mouse = (0, 0)
+
+    # minimize to python console window
+    def init_window(self):
+        self.m_win = win32gui.GetForegroundWindow()
+        #win32gui.ShowWindow(self.m_win, win32con.SW_MINIMIZE)
+        win32gui.ShowWindow(self.m_win, win32con.SW_HIDE)
 
     def get_root(self):
         if self.root is 0:
@@ -279,7 +285,6 @@ def ui_show(sys_tray, forced):
 
 listMovedWin = []
 def ui_resizer(sys_tray):
-    import win32con
     hwnd = win32gui.GetForegroundWindow()
     print("current win id: ", hwnd)
     str = win32gui.GetWindowText(hwnd)
@@ -321,7 +326,7 @@ def tray_menu():
     import itertools, glob
 
     icons = itertools.cycle(glob.glob('data/*.ico'))
-    hover_text = "WinPosMgr"
+    hover_text = "WinPosManager"
     menu_options = (
         ('Show', None, lambda sys_tray: ui_show(sys_tray, False)),
         ('Save', None, lambda sys_tray: button_pressed(win_mgr, 'save')),
@@ -329,6 +334,7 @@ def tray_menu():
         ('Clear log', None, lambda sys_tray: win_mgr.set_log_message('', '', cmd='clear')),
         ('Experiments', None, (
           ('Reset', None, lambda sys_tray: ui_show(sys_tray, True)),
+          ('Show debug msg.', None, lambda sys_tray: win32gui.ShowWindow(win_mgr.m_win, win32con.SW_SHOW)),
         ))
     )
 
@@ -341,7 +347,7 @@ def tray_menu():
         win_mgr.removed = True
         win_mgr.destroy()
 
-    tray.SysTrayIcon(next(icons), hover_text, menu_options, on_quit=bye, default_menu_index=1, on_click=get_click)
+    tray.SysTrayIcon(next(icons), hover_text, menu_options, on_quit=bye, default_menu_index=0, on_click=get_click)
     if win_mgr:
         win_mgr.removed = True
         win_mgr.destroy()
@@ -355,11 +361,11 @@ win_mgr = WinPosManager()
 win_mgr.config_load()
 
 if __name__ == '__main__':
-    os.chdir(os.path.dirname(__file__))
     # minimize to python console window
-    win = win32gui.GetForegroundWindow()
-    win32gui.ShowWindow(win, win32con.SW_MINIMIZE)
+    win_mgr.init_window()
 
+    # change directory
+    os.chdir(os.path.dirname(__file__))
     #run_as_admin()
     #SysRegEdit.execute(__file__)
     hk = system_hotkey.SystemHotkey()
