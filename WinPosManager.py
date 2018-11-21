@@ -7,6 +7,8 @@ import os, sys
 import threading
 import tkinter as tk
 
+import win32con
+
 import SysRegEdit
 import SysRunAdmin
 import WinPosCore as wp
@@ -267,19 +269,53 @@ def button_pressed(mgr, cmd):
         mgr.logging_message = ''
 
 
-def ui_show(sys_tray):
+def ui_show(sys_tray, forced):
+    if forced:  # forced reload WinPosCore
+        win_mgr.init_done = False
     root = win_mgr.ui_load2()
     win_mgr.ui_calc_geometry(win_mgr.pos_mouse[0])
     if root:
         root.mainloop()
 
-
+listMovedWin = []
 def ui_resizer(sys_tray):
+    import win32con
     hwnd = win32gui.GetForegroundWindow()
     print("current win id: ", hwnd)
     str = win32gui.GetWindowText(hwnd)
     print("current win name: ", str)
-
+    '''
+    pos = win_mgr.get_window_rect(hwnd)
+    win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, pos['x']+100, pos['y'], pos['w'], pos['h'], win32con.SWP_NOZORDER)
+    '''
+    find_win = None
+    idx = None
+    for one in listMovedWin:
+        if one is None: break
+        if one['hwnd'] is hwnd:
+            find_win = one
+            idx = listMovedWin.index(one)
+            break
+    if find_win is not None:
+        print(find_win)
+    else:
+        find_win = dict(
+            hwnd=hwnd,
+            title=str,
+            pos=pos,
+            key=0,
+            key_count=0,
+        )
+        listMovedWin.append(find_win)
+    screen = win_mgr.get_window_screen()
+    w_half_1 = int(screen[0] * 0.5)
+    h_half_1 = int(screen[1] * 0.5)
+    x = 0
+    y = h_half_1
+    w = int(w_half_1 * 0.5)
+    h = h_half_1
+    win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, x, y, w, h, win32con.SWP_NOZORDER)
+    listMovedWin[idx].update(find_win)
 
 def tray_menu():
     import itertools, glob
@@ -287,10 +323,13 @@ def tray_menu():
     icons = itertools.cycle(glob.glob('data/*.ico'))
     hover_text = "WinPosMgr"
     menu_options = (
-        ('Show', None, lambda sys_tray: ui_show(sys_tray)),
+        ('Show', None, lambda sys_tray: ui_show(sys_tray, False)),
         ('Save', None, lambda sys_tray: button_pressed(win_mgr, 'save')),
         ('Load', None, lambda sys_tray: button_pressed(win_mgr, 'load')),
         ('Clear log', None, lambda sys_tray: win_mgr.set_log_message('', '', cmd='clear')),
+        ('Experiments', None, (
+          ('Reset', None, lambda sys_tray: ui_show(sys_tray, True)),
+        ))
     )
 
     def get_click(sys_trayicon):
@@ -317,14 +356,18 @@ win_mgr.config_load()
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(__file__))
+    # minimize to python console window
+    win = win32gui.GetForegroundWindow()
+    win32gui.ShowWindow(win, win32con.SW_MINIMIZE)
+
     #run_as_admin()
     #SysRegEdit.execute(__file__)
     hk = system_hotkey.SystemHotkey()
     try:
         hk.register(('super', 'control', 'z'), callback=lambda ev: button_pressed(win_mgr, 'load'))
         hk.register(('super', 'control', 'x'), callback=lambda ev: button_pressed(win_mgr, 'save'))
-        hk.register(('super', 'control', 'a'), callback=lambda ev: ui_show(ev))
-        hk.register(('super', 'control', 't'), callback=lambda ev: ui_resizer(ev))
+        hk.register(('super', 'control', 'a'), callback=lambda ev: ui_show(ev, False))
+        hk.register(('super', 'control', 'kp_1'), callback=lambda ev: ui_resizer(ev))
     except Exception as e:
         print("already run this program: %s" % e)
         sys.exit(0)

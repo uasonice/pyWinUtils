@@ -50,11 +50,19 @@ class WinData(object):
         return False
 
     @staticmethod
-    def GetWinScreen():
+    def get_window_screen():
         user32 = ctypes.windll.user32
         screensize = user32.GetSystemMetrics(78), user32.GetSystemMetrics(79)
-        print("screensize: (%d, %d)" % (screensize))
+        print("screensize: (w:%d, h:%d)" % (screensize))
         return screensize
+
+    def get_window_rect(self, hwnd):
+        rect = win32gui.GetWindowRect(hwnd)
+        x = rect[0]
+        y = rect[1]
+        w = rect[2] - x
+        h = rect[3] - y
+        return dict(x=x, y=y, w=w, h=h)
 
     def ShowWinInfo(self):
         cnt = 0
@@ -66,26 +74,18 @@ class WinData(object):
         return
 
     def ShowWinInfo_sys(self, hwnd):
-        rect = win32gui.GetWindowRect(hwnd)
-        x = rect[0]
-        y = rect[1]
-        w = rect[2] - x
-        h = rect[3] - y
         title = win32gui.GetWindowText(hwnd)
-        if self.ExcludeWinName(title, w, h) == True: return
+        pos = self.get_window_rect(hwnd)
+        if self.ExcludeWinName(title, pos['w'], pos['h']) == True: return
         self.cnt += 1
         print("Window %s:" % win32gui.GetWindowText(hwnd))
-        print("₩tLocation: %d (%d, %d) - Size: (%d, %d)" % (self.cnt, x, y, w, h))
+        print("₩tLocation: %d (%d, %d) - Size: (%d, %d)" % (self.cnt, pos['x'], pos['y'], pos['w'], pos['h']))
         return
 
     def SaveWinInfo(self, hwnd):
-        rect = win32gui.GetWindowRect(hwnd)
-        x = rect[0]
-        y = rect[1]
-        w = rect[2] - x
-        h = rect[3] - y
         title = win32gui.GetWindowText(hwnd)
-        if self.ExcludeWinName(title, w, h) == True: return
+        pos = self.get_window_rect(hwnd)
+        if self.ExcludeWinName(title, pos['w'], pos['h']) == True: return
         """
         if 0 < title.find("cmd.exe"):            # remove cmd console process
             print("remove cmd console process: %08X %s" % (hwnd, title))
@@ -95,10 +95,10 @@ class WinData(object):
             "hwnd": hwnd,
             "title": title,
             "pos": [{
-                "x": x,
-                "y": y,
-                "w": w,
-                "h": h
+                "x": pos['x'],
+                "y": pos['y'],
+                "w": pos['w'],
+                "h": pos['h']
             }]
         }
         self.list.append(l)
@@ -188,7 +188,7 @@ def winpos_main(windata: WinData, cmd: str):
         win32gui.EnumWindows(cbWinShowInfo, windata)
         return 0
 
-    screen = windata.GetWinScreen()
+    screen = windata.get_window_screen()
     datafile = "winpos_%s_%dx%d.json" % (windata.profile_name, screen[0], screen[1])
     print("datafile name: %s" % datafile)
     if cmd == "save":        # 저장
