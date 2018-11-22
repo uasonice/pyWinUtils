@@ -295,6 +295,8 @@ def ui_show(sys_tray, forced):
     if forced:  # forced reload WinPosCore
         win_mgr.init_done = False
     root = win_mgr.ui_load2()
+    if win_mgr.pos_mouse[0] is 0:
+        win_mgr.pos_mouse = win32gui.GetCursorPos()
     win_mgr.ui_calc_geometry(win_mgr.pos_mouse[0])
     if root:
         root.mainloop()
