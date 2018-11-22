@@ -14,8 +14,11 @@ import WinPosCore as wp
 import SysTrayIcon as tray
 import system_hotkey
 
+# constant value
+MIN_WIDTH = 200
+MIN_HEIGHT = 200
 
-# init global var.
+
 class WinPosManager(wp.WinData):
     root: tk.Tk
     popup: tk.Tk
@@ -39,15 +42,15 @@ class WinPosManager(wp.WinData):
         self.is_ui_load = False
         self.is_ui_show = False
         self.wg_log_msg = tk.Text()
-        self.m_width = 200
-        self.m_height = 200
+        self.m_width = MIN_WIDTH
+        self.m_height = MIN_HEIGHT
         self.m_margin_x = 100
         self.m_margin_y = 100
         self.pos_mouse = (0, 0)
 
     # minimize to python console window
     def init_window(self):
-        self.m_win = win32gui.GetForegroundWindow()
+        self.m_win = win32gui.FindWindow(None, "WinPosManager")
         #win32gui.ShowWindow(self.m_win, win32con.SW_MINIMIZE)
         win32gui.ShowWindow(self.m_win, win32con.SW_HIDE)
 
@@ -73,7 +76,11 @@ class WinPosManager(wp.WinData):
         if conf and conf.get('manager'):
             pos = conf['manager']['pos']
             self.m_width =  pos['w']
+            if self.m_width <= MIN_WIDTH:
+                self.m_width = MIN_WIDTH
             self.m_height = pos['h']
+            if self.m_height <= MIN_HEIGHT:
+                self.m_height = MIN_HEIGHT
             self.m_margin_x = pos['margin_x']
             self.m_margin_y = pos['margin_y']
 
@@ -90,7 +97,7 @@ class WinPosManager(wp.WinData):
 
     def ui_load(self):
         root = self.get_root()
-        root.title("WinPosManager")
+        root.title("WinPosManager_UI")
         self.ui_calc_geometry()
         tk.Label(root, text="Windows Position Manager").pack()
         tk.Button(root, text="Save", width=20, command=lambda: button_pressed(self, 'save')).pack()
@@ -129,10 +136,19 @@ class WinPosManager(wp.WinData):
         screen_height = self.root.winfo_screenheight()
         my_x = screen_width - self.m_width - self.m_margin_x
         my_y = screen_height - self.m_height - self.m_margin_y
-        if x is not 0 and x + self.m_width <= screen_width: my_x = x
-        if y is not 0 and x + self.m_height <= screen_height: my_y = y
-        print("X:Y(%d:%d) - width x height: (%dx%d)" % (my_x, my_y, screen_width, screen_height))
-
+        if x > 0 and x + self.m_width <= screen_width:
+            print("set x:", x)
+            my_x = x
+        if y > 0 and y + self.m_height <= screen_height:
+            print("set y:", y)
+            my_y = y
+        if my_x < 0:
+            print("reset x:", my_x)
+            my_x = 0
+        if my_y < 0:
+            print("reset y:", my_y)
+            my_y = 0
+        print("X:Y(%d:%d) - width x height: (%dx%d) scr(%dx%d)" % (my_x, my_y, self.m_width, self.m_height, screen_width, screen_height))
         self.root.geometry("%dx%d+%d+%d" % (self.m_width, self.m_height, my_x, my_y))
 
     def ui_show_toggle(self):
@@ -153,7 +169,7 @@ class WinPosManager(wp.WinData):
         self.config_load()
 
         root.overrideredirect(True)
-        root.title("WinPosManager")
+        root.title("WinPosManager_UI")
         root.resizable(False, False)
         self.ui_calc_geometry()
 
@@ -291,7 +307,7 @@ def ui_resizer(sys_tray):
     print("current win name: ", str)
     '''
     pos = win_mgr.get_window_rect(hwnd)
-    win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, pos['x']+100, pos['y'], pos['w'], pos['h'], win32con.SWP_NOZORDER)
+    win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, pos.x+100, pos.y, pos.w, pos.h, win32con.SWP_NOZORDER)
     '''
     find_win = None
     idx = None
@@ -361,6 +377,7 @@ win_mgr = WinPosManager()
 win_mgr.config_load()
 
 if __name__ == '__main__':
+    #sys.exit(0)
     # minimize to python console window
     win_mgr.init_window()
 
