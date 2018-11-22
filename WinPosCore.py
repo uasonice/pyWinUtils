@@ -8,6 +8,53 @@ import sys
 import ctypes
 
 
+class Point:
+    x: int
+    y: int
+
+    def __init__(self, x=0, y=0):
+        self.x = x
+        self.y = y
+
+    def __add__(self, pt):
+        return Point(self.x + pt.x, self.y + pt.y)
+
+    def __sub__(self, pt):
+        return Point(self.x - pt.x, self.y - pt.y)
+
+    def __mul__(self, scalar):
+        return Point(self.x *scalar, self.y *scalar)
+
+    def __div__(self, scalar):
+        return Point(self.x /scalar, self.y /scalar)
+
+    def __str__(self):
+        return "(%d, %d)" % (self.x, self.y)
+
+
+class Rect(Point):
+    w: int
+    h: int
+
+    def __init__(self, pt1=Point(), pt2=Point()):
+        self.x = pt1.x
+        self.y = pt1.y
+        self.w = pt2.x
+        self.h = pt2.y
+
+    def __add__(self, rect):
+        return Rect(self.x + rect.x, self.y + rect.y, self.w + rect.w, self.h + rect.h)
+
+    def __sub__(self, rect):
+        return Rect(self.x - rect.x, self.y - rect.y, self.w - rect.w, self.h - rect.h)
+
+    def __str__(self):
+        return "(%d, %d, %d, %d)" % (self.x, self.y, self.w, self.h)
+
+    def to_json(self):
+        return dict(x=self.x, y=self.y, w=self.w, h=self.h)
+
+
 class WinData(object):
     profile_name: object
     logging_message: str
@@ -57,12 +104,10 @@ class WinData(object):
         return screensize
 
     def get_window_rect(self, hwnd):
-        rect = win32gui.GetWindowRect(hwnd)
-        x = rect[0]
-        y = rect[1]
-        w = rect[2] - x
-        h = rect[3] - y
-        return dict(x=x, y=y, w=w, h=h)
+        w_rect = win32gui.GetWindowRect(hwnd)
+        pt = Point(w_rect[0], w_rect[1])
+        r = Rect(pt, Point(w_rect[2], w_rect[3]) - pt)
+        return r
 
     def ShowWinInfo(self):
         cnt = 0
@@ -76,16 +121,16 @@ class WinData(object):
     def ShowWinInfo_sys(self, hwnd):
         title = win32gui.GetWindowText(hwnd)
         pos = self.get_window_rect(hwnd)
-        if self.ExcludeWinName(title, pos['w'], pos['h']) == True: return
+        if self.ExcludeWinName(title, pos.w, pos.h) == True: return
         self.cnt += 1
-        print("Window %s:" % win32gui.GetWindowText(hwnd))
-        print("₩tLocation: %d (%d, %d) - Size: (%d, %d)" % (self.cnt, pos['x'], pos['y'], pos['w'], pos['h']))
+        print("%08X [%s]: %d (%d, %d) - Size: (%d, %d)" % (hwnd, win32gui.GetWindowText(hwnd), \
+            self.cnt, pos.x, pos.y, pos.w, pos.h))
         return
 
     def SaveWinInfo(self, hwnd):
         title = win32gui.GetWindowText(hwnd)
         pos = self.get_window_rect(hwnd)
-        if self.ExcludeWinName(title, pos['w'], pos['h']) == True: return
+        if self.ExcludeWinName(title, pos.w, pos.h) == True: return
         """
         if 0 < title.find("cmd.exe"):            # remove cmd console process
             print("remove cmd console process: %08X %s" % (hwnd, title))
@@ -94,12 +139,7 @@ class WinData(object):
         l = {
             "hwnd": hwnd,
             "title": title,
-            "pos": [{
-                "x": pos['x'],
-                "y": pos['y'],
-                "w": pos['w'],
-                "h": pos['h']
-            }]
+            "pos": [ pos.to_json() ]
         }
         self.list.append(l)
         self.cnt += 1
