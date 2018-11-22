@@ -51,6 +51,23 @@ class Rect(Point):
     def __str__(self):
         return "(%d, %d, %d, %d)" % (self.x, self.y, self.w, self.h)
 
+    def set(self, obj):
+        try:
+            #print(type(obj))
+            if type(obj) == list:
+                self.x = obj[0]
+                self.y = obj[1]
+                self.w = obj[2]
+                self.h = obj[3]
+            elif type(obj) == dict:
+                self.x = obj['x']
+                self.y = obj['y']
+                self.w = obj['w']
+                self.h = obj['h']
+        except Exception as e:
+            pass
+        return self
+
     def to_json(self):
         return dict(x=self.x, y=self.y, w=self.w, h=self.h)
 
@@ -113,9 +130,9 @@ class WinData(object):
         cnt = 0
         for d in self.list:
             cnt += 1
-            pos = d['pos'][0]
-            self.printinfo("%08X Window %s(%2d):" % (d['hwnd'], d['title'], len(d['title'])))
-            self.printinfo("₩tLocation: %d (%d, %d) - Size: (%d, %d)" % (cnt, pos['x'], pos['y'], pos['w'], pos['h']))
+            pos = Rect.set(Rect(), d['pos'])
+            self.printinfo("%08X [%s]: %d (%d, %d) - Size: (%d, %d)" % (d['hwnd'], d['title'], \
+                cnt, pos.x, pos.y, pos.w, pos.h))
         return
 
     def ShowWinInfo_sys(self, hwnd):
@@ -139,7 +156,7 @@ class WinData(object):
         l = {
             "hwnd": hwnd,
             "title": title,
-            "pos": [ pos.to_json() ]
+            "pos": pos.to_json()
         }
         self.list.append(l)
         self.cnt += 1
@@ -168,14 +185,14 @@ class WinData(object):
                 print(err_msg)
                 #continue
                 hwnd = d['hwnd']
-            pos = d['pos'][0]
+            pos = Rect.set(Rect(), d['pos'])
             try:
-                win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, pos['x'], pos['y'], pos['w'], pos['h'], uflag)
+                win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, pos.x, pos.y, pos.w, pos.h, uflag)
             except:
                 self.printinfo("Exception %08X Window %s(%2d):" % (d['hwnd'], d['title'], len(d['title'])))
 
-            self.printinfo("%08X Window %s(%2d):" % (d['hwnd'], d['title'], len(d['title'])))
-            self.printinfo("₩tLocation: %d (%d, %d) - Size: (%d, %d)" % (cnt, pos['x'], pos['y'], pos['w'], pos['h']))
+            self.printinfo("%08X [%s]: %d (%d, %d) - Size: (%d, %d)" % (d['hwnd'], d['title'], \
+                cnt, pos.x, pos.y, pos.w, pos.h))
         return
 
     def save_config(self, forced: bool=False, p_conf=''):
