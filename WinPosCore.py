@@ -82,6 +82,7 @@ class WinData(object):
 
         self.init_done = False
         self.cnt = 0
+        self.cntExclude = 0
         self.list = []
         self.m_conf_file = "winposcore.conf"
         self.logging_message = ""
@@ -105,11 +106,18 @@ class WinData(object):
         self.change_config = True
         self.profile_name = str
 
-    @staticmethod
-    def ExcludeWinName(title: str, w, h):
+    def ExcludeWinName(self, hwnd, title: str, pos):
+        if win32gui.IsWindowEnabled(hwnd) == False:
+            return True
+        if win32gui.IsWindowVisible(hwnd) == False:
+            return True
         if (2 > len(title)): # 제목이 없거나 1자인 경우
             return True
-        if (3 > w + h):    # 넓이 + 높이가 3 미만인 경우
+        if (100 > pos.w + pos.h):    # 넓이 + 높이가 100 미만인 경우
+            return True
+        if (0 > pos.x + pos.w):    # X 축 모니터 벗어남
+            return True
+        if (0 > pos.y + pos.h):    # Y 축 모니터 벗어남
             return True
         return False
 
@@ -138,7 +146,8 @@ class WinData(object):
     def ShowWinInfo_sys(self, hwnd):
         title = win32gui.GetWindowText(hwnd)
         pos = self.get_window_rect(hwnd)
-        if self.ExcludeWinName(title, pos.w, pos.h) == True: return
+        if self.ExcludeWinName(hwnd, title, pos) == True:
+            return
         self.cnt += 1
         print("%08X [%s]: %d (%d, %d) - Size: (%d, %d)" % (hwnd, win32gui.GetWindowText(hwnd), \
             self.cnt, pos.x, pos.y, pos.w, pos.h))
@@ -147,7 +156,9 @@ class WinData(object):
     def SaveWinInfo(self, hwnd):
         title = win32gui.GetWindowText(hwnd)
         pos = self.get_window_rect(hwnd)
-        if self.ExcludeWinName(title, pos.w, pos.h) == True: return
+        if self.ExcludeWinName(hwnd, title, pos) == True:
+            self.cntExclude += 1
+            return
         """
         if 0 < title.find("cmd.exe"):            # remove cmd console process
             print("remove cmd console process: %08X %s" % (hwnd, title))
@@ -249,6 +260,7 @@ def winpos_main(windata: WinData, cmd: str):
     datafile = "winpos_%s_%dx%d.json" % (windata.profile_name, screen[0], screen[1])
     print("datafile name: %s" % datafile)
     if cmd == "save":        # 저장
+        windata.cntExclude = 0
         win32gui.EnumWindows(cbWinSave, windata)
         with open(datafile, 'w') as outfile:
             json.dump(windata.list, outfile, indent=4)
@@ -256,7 +268,6 @@ def winpos_main(windata: WinData, cmd: str):
     elif cmd == "load":        # 불러오기
         windata.LoadWinInfo(datafile)
     return 0
-
 
 def main(argv):
     windata = WinData()

@@ -5,7 +5,6 @@ import win32con
 from io import StringIO
 import datetime
 import os, sys
-import threading
 import tkinter as tk
 
 import SysRegEdit
@@ -286,6 +285,8 @@ def button_pressed(mgr, cmd):
     if cmd == "show":
         sys.stdout = stdout
         mgr.popupmsg(buffer.getvalue())
+    if cmd == "save":
+        mgr.set_log_message(False, "cnt: %03d, cntExclude: %03d" % (mgr.cnt, mgr.cntExclude))
     if len(mgr.logging_message) > 0:
         mgr.set_log_message(False, mgr.logging_message)
         mgr.logging_message = ''
@@ -378,15 +379,8 @@ def run_as_admin():
 win_mgr = WinPosManager()
 win_mgr.config_load()
 
-if __name__ == '__main__':
-    #sys.exit(0)
-    # minimize to python console window
-    win_mgr.init_window()
 
-    # change directory
-    os.chdir(os.path.dirname(__file__))
-    #run_as_admin()
-    #SysRegEdit.execute(__file__)
+def enableHotkey():
     hk = system_hotkey.SystemHotkey()
     try:
         hk.register(('super', 'control', 'z'), callback=lambda ev: button_pressed(win_mgr, 'load'))
@@ -396,6 +390,20 @@ if __name__ == '__main__':
     except Exception as e:
         print("already run this program: %s" % e)
         sys.exit(0)
+
+
+if __name__ == '__main__':
+    #sys.exit(0)
+    # minimize to python console window
+    win_mgr.init_window()
+
+    # change directory
+    os.chdir(os.path.dirname(__file__))
+
+    #run_as_admin()
+    #SysRegEdit.execute(__file__)
+
+    #enableHotkey()
 
     # app = threading.Thread(target=ShowUI)
     # app.start()
