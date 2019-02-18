@@ -160,6 +160,11 @@ class WinData(object):
             self.cnt, pos.x, pos.y, pos.w, pos.h))
         return
 
+    def PreSave(self):
+        self.cnt = 0
+        self.cntExclude = 0
+        self.list.clear()
+
     def SaveWinInfo(self, hwnd):
         title = win32gui.GetWindowText(hwnd)
         pos = self.get_window_rect(hwnd)
@@ -263,7 +268,7 @@ def winpos_main(windata: WinData, cmd: str):
     datafile = "winpos_%s_%dx%d.json" % (windata.profile_name, screen[0], screen[1])
     print("datafile name: %s" % datafile)
     if cmd == "save":        # 저장
-        windata.cntExclude = 0
+        windata.PreSave()
         win32gui.EnumWindows(cbWinSave, windata)
         with open(datafile, 'w') as outfile:
             json.dump(windata.list, outfile, indent=4)
