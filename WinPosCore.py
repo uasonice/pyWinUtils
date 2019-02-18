@@ -92,6 +92,9 @@ class WinData(object):
         self.profile_name = "data"
         self.dumpinfo = False   # dump process simple information.
 
+        # exclude App. list
+        self.exclude_list = ["cmd.exe"]
+
     def init2(self):
         if self.init_done is True: return 0
         self.init_done = True
@@ -113,12 +116,16 @@ class WinData(object):
             return True
         if (2 > len(title)): # 제목이 없거나 1자인 경우
             return True
-        if (100 > pos.w + pos.h):    # 넓이 + 높이가 100 미만인 경우
+        if (100 > pos.w + pos.h):   # 넓이 + 높이가 100 미만인 경우
             return True
-        if (0 > pos.x + pos.w):    # X 축 모니터 벗어남
+        if (0 > pos.x + pos.w):     # X 축 모니터 벗어남
             return True
-        if (0 > pos.y + pos.h):    # Y 축 모니터 벗어남
+        if (0 > pos.y + pos.h):     # Y 축 모니터 벗어남
             return True
+        for name in self.exclude_list:   # remove App
+            if 0 < title.find(name):
+                print("remove App: %08X %s" % (hwnd, name))
+                return True
         return False
 
     @staticmethod
@@ -159,18 +166,14 @@ class WinData(object):
         if self.ExcludeWinName(hwnd, title, pos) == True:
             self.cntExclude += 1
             return
-        """
-        if 0 < title.find("cmd.exe"):            # remove cmd console process
-            print("remove cmd console process: %08X %s" % (hwnd, title))
-            return
-        """
+        self.cnt += 1
         l = {
+            "no": self.cnt,
             "hwnd": hwnd,
             "title": title,
             "pos": pos.to_json()
         }
         self.list.append(l)
-        self.cnt += 1
         return
 
     def printinfo(self, fmt):
