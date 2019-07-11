@@ -2,6 +2,7 @@
 # -*- coding: utf8 -*-
 import win32gui
 import win32con
+import win32api
 from io import StringIO
 import datetime
 import os, sys
@@ -306,9 +307,15 @@ listPos = []
 def init_list_position():
     global listPos
     # get screen info
+    monitor_info = win32api.GetMonitorInfo(win32api.MonitorFromPoint(win32api.GetCursorPos()))
+    work_area = monitor_info.get("Work")
+    w_half_1 = int(work_area[2] * 0.5)
+    h_half_1 = int(work_area[3] * 0.5)
+    '''
     screen = win_mgr.get_window_screen()
     w_half_1 = int(screen[0] * 0.5)
     h_half_1 = int(screen[1] * 0.5)
+    '''
     listPos.append([]) # key0
     listPos.append([]) # key1
     listPos[1].append(wp.Rect().set([0, h_half_1, int(w_half_1 * 0.5), h_half_1]))
@@ -374,6 +381,9 @@ def ui_resizer(sys_tray, key):
         listMovedWin.append(find_win)
 
     def ui_move_position(idx):
+        if key == win32con.VK_NUMPAD5:      # return original position
+            listMovedWin.remove(find_win)
+            return find_win["pos"]
         new_pos = wp.Rect()
         if find_win["key"] != key:
             find_win["key"] = key
@@ -389,26 +399,8 @@ def ui_resizer(sys_tray, key):
         return new_pos
 
     new_pos = wp.Rect()
-    if key == win32con.VK_NUMPAD1:
-        new_pos = ui_move_position(1)
-    elif key == win32con.VK_NUMPAD2:
-        new_pos = ui_move_position(2)
-    elif key == win32con.VK_NUMPAD3:
-        new_pos = ui_move_position(3)
-    elif key == win32con.VK_NUMPAD4:
-        new_pos = ui_move_position(4)
-    elif key == win32con.VK_NUMPAD5:
-        listMovedWin.remove(find_win)
-        new_pos = find_win["pos"]
-        pass
-    elif key == win32con.VK_NUMPAD6:
-        new_pos = ui_move_position(6)
-    elif key == win32con.VK_NUMPAD7:
-        new_pos = ui_move_position(7)
-    elif key == win32con.VK_NUMPAD8:
-        new_pos = ui_move_position(8)
-    elif key == win32con.VK_NUMPAD9:
-        new_pos = ui_move_position(9)
+    if key >= win32con.VK_NUMPAD1 and key <= win32con.VK_NUMPAD9 :
+        new_pos = ui_move_position(key - win32con.VK_NUMPAD0)
 
     if not new_pos.is_empty():
         win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, new_pos.x, new_pos.y, new_pos.w, new_pos.h, win32con.SWP_NOZORDER)
