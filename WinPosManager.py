@@ -302,24 +302,65 @@ def ui_show(sys_tray, forced):
     if root:
         root.mainloop()
 
+listPos = []
+def init_list_position():
+    global listPos
+    # get screen info
+    screen = win_mgr.get_window_screen()
+    w_half_1 = int(screen[0] * 0.5)
+    h_half_1 = int(screen[1] * 0.5)
+    listPos.append([]) # key0
+    listPos.append([]) # key1
+    listPos[1].append(wp.Rect().set([0, h_half_1, int(w_half_1 * 0.5), h_half_1]))
+    listPos[1].append(wp.Rect().set([int(w_half_1 * 0.5), h_half_1, int(w_half_1 * 0.5), h_half_1]))
+    listPos[1].append(wp.Rect().set([0, h_half_1, int(w_half_1), h_half_1]))
+    listPos.append([]) # key2
+    listPos[2].append(wp.Rect().set([int(w_half_1 * 0.5), h_half_1, int(w_half_1 * 0.5), h_half_1]))
+    listPos[2].append(wp.Rect().set([int(w_half_1      ), h_half_1, int(w_half_1 * 0.5), h_half_1]))
+    listPos[2].append(wp.Rect().set([int(w_half_1 * 0.5), h_half_1, int(w_half_1), h_half_1]))
+    listPos.append([]) # key3
+    listPos[3].append(wp.Rect().set([w_half_1, h_half_1, int(w_half_1 * 0.5), h_half_1]))
+    listPos[3].append(wp.Rect().set([w_half_1 + int(w_half_1 * 0.5), h_half_1, int(w_half_1 * 0.5), h_half_1]))
+    listPos[3].append(wp.Rect().set([w_half_1, h_half_1, int(w_half_1), h_half_1]))
+    listPos.append([]) # key4
+    listPos[4].append(wp.Rect().set([0, 0, int(w_half_1 * 0.5), h_half_1*2]))
+    listPos[4].append(wp.Rect().set([int(w_half_1 * 0.5), 0, int(w_half_1 * 0.5), h_half_1*2]))
+    listPos[4].append(wp.Rect().set([0, 0, int(w_half_1), h_half_1*2]))
+    listPos.append([]) # key5
+    listPos.append([]) # key6
+    listPos[6].append(wp.Rect().set([w_half_1, 0, int(w_half_1 * 0.5), h_half_1*2]))
+    listPos[6].append(wp.Rect().set([w_half_1 + int(w_half_1 * 0.5), 0, int(w_half_1 * 0.5), h_half_1*2]))
+    listPos[6].append(wp.Rect().set([w_half_1, 0, int(w_half_1), h_half_1*2]))
+    listPos.append([]) # key7
+    listPos[7].append(wp.Rect().set([0, 0, int(w_half_1 * 0.5), h_half_1]))
+    listPos[7].append(wp.Rect().set([int(w_half_1 * 0.5), 0, int(w_half_1 * 0.5), h_half_1]))
+    listPos[7].append(wp.Rect().set([0, 0, int(w_half_1), h_half_1]))
+    listPos.append([]) # key8
+    listPos[8].append(wp.Rect().set([int(w_half_1 * 0.5), 0, int(w_half_1 * 0.5), h_half_1]))
+    listPos[8].append(wp.Rect().set([int(w_half_1      ), 0, int(w_half_1 * 0.5), h_half_1]))
+    listPos[8].append(wp.Rect().set([int(w_half_1 * 0.5), 0, int(w_half_1), h_half_1]))
+    listPos.append([]) # key9
+    listPos[9].append(wp.Rect().set([w_half_1, 0, int(w_half_1 * 0.5), h_half_1]))
+    listPos[9].append(wp.Rect().set([w_half_1 + int(w_half_1 * 0.5), 0, int(w_half_1 * 0.5), h_half_1]))
+    listPos[9].append(wp.Rect().set([w_half_1, 0, int(w_half_1), h_half_1]))
+
 listMovedWin = []
-def ui_resizer(sys_tray):
+def ui_resizer(sys_tray, key):
+    global listMovedWin, listPos
     hwnd = win32gui.GetForegroundWindow()
     print("current win id: ", hwnd)
     str = win32gui.GetWindowText(hwnd)
     print("current win name: ", str)
-    '''
     pos = win_mgr.get_window_rect(hwnd)
-    win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, pos.x+100, pos.y, pos.w, pos.h, win32con.SWP_NOZORDER)
-    '''
     find_win = None
     idx = None
     for one in listMovedWin:
         if one is None: break
-        if one['hwnd'] is hwnd:
+        if one['hwnd'] == hwnd:
             find_win = one
             idx = listMovedWin.index(one)
             break
+
     if find_win is not None:
         print(find_win)
     else:
@@ -327,19 +368,52 @@ def ui_resizer(sys_tray):
             hwnd=hwnd,
             title=str,
             pos=pos,
-            key=0,
+            key=key,        # pressed key number
             key_count=0,
         )
         listMovedWin.append(find_win)
-    screen = win_mgr.get_window_screen()
-    w_half_1 = int(screen[0] * 0.5)
-    h_half_1 = int(screen[1] * 0.5)
-    x = 0
-    y = h_half_1
-    w = int(w_half_1 * 0.5)
-    h = h_half_1
-    win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, x, y, w, h, win32con.SWP_NOZORDER)
-    listMovedWin[idx].update(find_win)
+
+    def ui_move_position(idx):
+        new_pos = wp.Rect()
+        if find_win["key"] != key:
+            find_win["key"] = key
+            find_win["key_count"] = 0
+
+        if find_win["key_count"] == 3:      # return original position
+            listMovedWin.remove(find_win)
+            new_pos = find_win["pos"]
+        else:
+            new_pos = listPos[idx][find_win["key_count"]]
+            find_win["key_count"] += 1
+            pass
+        return new_pos
+
+    new_pos = wp.Rect()
+    if key == win32con.VK_NUMPAD1:
+        new_pos = ui_move_position(1)
+    elif key == win32con.VK_NUMPAD2:
+        new_pos = ui_move_position(2)
+    elif key == win32con.VK_NUMPAD3:
+        new_pos = ui_move_position(3)
+    elif key == win32con.VK_NUMPAD4:
+        new_pos = ui_move_position(4)
+    elif key == win32con.VK_NUMPAD5:
+        listMovedWin.remove(find_win)
+        new_pos = find_win["pos"]
+        pass
+    elif key == win32con.VK_NUMPAD6:
+        new_pos = ui_move_position(6)
+    elif key == win32con.VK_NUMPAD7:
+        new_pos = ui_move_position(7)
+    elif key == win32con.VK_NUMPAD8:
+        new_pos = ui_move_position(8)
+    elif key == win32con.VK_NUMPAD9:
+        new_pos = ui_move_position(9)
+
+    if not new_pos.is_empty():
+        win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, new_pos.x, new_pos.y, new_pos.w, new_pos.h, win32con.SWP_NOZORDER)
+    #listMovedWin[idx].update(find_win)
+    pass
 
 def tray_menu():
     import itertools, glob
@@ -386,10 +460,21 @@ def enableHotkey():
         hk.register(('super', 'control', 'z'), callback=lambda ev: button_pressed(win_mgr, 'load'))
         hk.register(('super', 'control', 'x'), callback=lambda ev: button_pressed(win_mgr, 'save'))
         hk.register(('super', 'control', 'a'), callback=lambda ev: ui_show(ev, False))
-        hk.register(('super', 'control', 'kp_1'), callback=lambda ev: ui_resizer(ev))
+        hk.register(('super', 'control', 'kp_0'), callback=lambda ev: ui_resizer(ev, win32con.VK_NUMPAD0))
+        hk.register(('super', 'control', 'kp_1'), callback=lambda ev: ui_resizer(ev, win32con.VK_NUMPAD1))
+        hk.register(('super', 'control', 'k'), callback=lambda ev: ui_resizer(ev, win32con.VK_NUMPAD2))
+        hk.register(('super', 'control', 'kp_3'), callback=lambda ev: ui_resizer(ev, win32con.VK_NUMPAD3))
+        hk.register(('super', 'control', 'j'), callback=lambda ev: ui_resizer(ev, win32con.VK_NUMPAD4))
+        hk.register(('super', 'control', 'kp_5'), callback=lambda ev: ui_resizer(ev, win32con.VK_NUMPAD5))
+        hk.register(('super', 'control', 'l'), callback=lambda ev: ui_resizer(ev, win32con.VK_NUMPAD6))
+        hk.register(('super', 'control', 'kp_7'), callback=lambda ev: ui_resizer(ev, win32con.VK_NUMPAD7))
+        hk.register(('super', 'control', 'i'), callback=lambda ev: ui_resizer(ev, win32con.VK_NUMPAD8))
+        hk.register(('super', 'control', 'kp_9'), callback=lambda ev: ui_resizer(ev, win32con.VK_NUMPAD9))
     except Exception as e:
         print("already run this program: %s" % e)
         sys.exit(0)
+    except system_hotkey.SystemRegisterError as e:
+        print("key reg. fail: %s" % e)
 
 
 if __name__ == '__main__':
@@ -403,7 +488,8 @@ if __name__ == '__main__':
     #run_as_admin()
     #SysRegEdit.execute(__file__)
 
-    #enableHotkey()
+    init_list_position()
+    enableHotkey()
 
     # app = threading.Thread(target=ShowUI)
     # app.start()

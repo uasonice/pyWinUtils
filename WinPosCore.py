@@ -68,6 +68,11 @@ class Rect(Point):
             pass
         return self
 
+    def is_empty(self):
+        if self.x == 0 and self.y == 0 and self.w == 0 and self.h == 0:
+            return True
+        return False
+
     def to_json(self):
         return dict(x=self.x, y=self.y, w=self.w, h=self.h)
 
