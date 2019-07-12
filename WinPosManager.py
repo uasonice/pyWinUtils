@@ -303,53 +303,59 @@ def ui_show(sys_tray, forced):
     if root:
         root.mainloop()
 
-listPos = []
+listPos = 10*[None]
 def init_list_position():
     global listPos
     # get screen info
     monitor_info = win32api.GetMonitorInfo(win32api.MonitorFromPoint(win32api.GetCursorPos()))
     work_area = monitor_info.get("Work")
-    w_half_1 = int(work_area[2] * 0.5)
-    h_half_1 = int(work_area[3] * 0.5)
+    w_half_1 = int(work_area[2] / 2)
+    h_half_1 = int(work_area[3] / 2)
+    margin_w = 15 # 화면상에 비는 영역이 발생하여 넓이 보정치
+    margin_h = 20
     '''
     screen = win_mgr.get_window_screen()
-    w_half_1 = int(screen[0] * 0.5)
-    h_half_1 = int(screen[1] * 0.5)
+    w_half_1 = int(screen[0] /2)
+    h_half_1 = int(screen[1] /2)
     '''
-    listPos.append([]) # key0
-    listPos.append([]) # key1
-    listPos[1].append(wp.Rect().set([0, h_half_1, int(w_half_1 * 0.5), h_half_1]))
-    listPos[1].append(wp.Rect().set([int(w_half_1 * 0.5), h_half_1, int(w_half_1 * 0.5), h_half_1]))
-    listPos[1].append(wp.Rect().set([0, h_half_1, int(w_half_1), h_half_1]))
-    listPos.append([]) # key2
-    listPos[2].append(wp.Rect().set([int(w_half_1 * 0.5), h_half_1, int(w_half_1 * 0.5), h_half_1]))
-    listPos[2].append(wp.Rect().set([int(w_half_1      ), h_half_1, int(w_half_1 * 0.5), h_half_1]))
-    listPos[2].append(wp.Rect().set([int(w_half_1 * 0.5), h_half_1, int(w_half_1), h_half_1]))
-    listPos.append([]) # key3
-    listPos[3].append(wp.Rect().set([w_half_1, h_half_1, int(w_half_1 * 0.5), h_half_1]))
-    listPos[3].append(wp.Rect().set([w_half_1 + int(w_half_1 * 0.5), h_half_1, int(w_half_1 * 0.5), h_half_1]))
-    listPos[3].append(wp.Rect().set([w_half_1, h_half_1, int(w_half_1), h_half_1]))
-    listPos.append([]) # key4
-    listPos[4].append(wp.Rect().set([0, 0, int(w_half_1 * 0.5), h_half_1*2]))
-    listPos[4].append(wp.Rect().set([int(w_half_1 * 0.5), 0, int(w_half_1 * 0.5), h_half_1*2]))
-    listPos[4].append(wp.Rect().set([0, 0, int(w_half_1), h_half_1*2]))
-    listPos.append([]) # key5
-    listPos.append([]) # key6
-    listPos[6].append(wp.Rect().set([w_half_1, 0, int(w_half_1 * 0.5), h_half_1*2]))
-    listPos[6].append(wp.Rect().set([w_half_1 + int(w_half_1 * 0.5), 0, int(w_half_1 * 0.5), h_half_1*2]))
-    listPos[6].append(wp.Rect().set([w_half_1, 0, int(w_half_1), h_half_1*2]))
-    listPos.append([]) # key7
-    listPos[7].append(wp.Rect().set([0, 0, int(w_half_1 * 0.5), h_half_1]))
-    listPos[7].append(wp.Rect().set([int(w_half_1 * 0.5), 0, int(w_half_1 * 0.5), h_half_1]))
-    listPos[7].append(wp.Rect().set([0, 0, int(w_half_1), h_half_1]))
-    listPos.append([]) # key8
-    listPos[8].append(wp.Rect().set([int(w_half_1 * 0.5), 0, int(w_half_1 * 0.5), h_half_1]))
-    listPos[8].append(wp.Rect().set([int(w_half_1      ), 0, int(w_half_1 * 0.5), h_half_1]))
-    listPos[8].append(wp.Rect().set([int(w_half_1 * 0.5), 0, int(w_half_1), h_half_1]))
-    listPos.append([]) # key9
-    listPos[9].append(wp.Rect().set([w_half_1, 0, int(w_half_1 * 0.5), h_half_1]))
-    listPos[9].append(wp.Rect().set([w_half_1 + int(w_half_1 * 0.5), 0, int(w_half_1 * 0.5), h_half_1]))
-    listPos[9].append(wp.Rect().set([w_half_1, 0, int(w_half_1), h_half_1]))
+    listPos[0] = 5* [None]
+    listPos[0][0] = wp.Rect().set([0        , 0       , int(w_half_1)+margin_w, h_half_1+margin_h])
+    listPos[0][1] = wp.Rect().set([w_half_1 , 0       , int(w_half_1)+margin_w, h_half_1+margin_h])
+    listPos[0][2] = wp.Rect().set([0        , h_half_1, int(w_half_1)+margin_w, h_half_1+margin_h])
+    listPos[0][3] = wp.Rect().set([w_half_1 , h_half_1, int(w_half_1)+margin_w, h_half_1+margin_h])
+    listPos[0][4] = wp.Rect().set([int(w_half_1 /2), int(h_half_1 /2), int(w_half_1)+margin_w, h_half_1+margin_h])
+    listPos[1] = 3* [None]
+    listPos[1][0] = wp.Rect().set([0               , h_half_1, int(w_half_1 /2)+margin_w, h_half_1+margin_h])
+    listPos[1][1] = wp.Rect().set([int(w_half_1 /2), h_half_1, int(w_half_1 /2)+margin_w, h_half_1+margin_h])
+    listPos[1][2] = wp.Rect().set([0               , h_half_1, int(w_half_1   )+margin_w, h_half_1+margin_h])
+    listPos[2] = 3* [None]
+    listPos[2][0] = wp.Rect().set([int(w_half_1 /2), h_half_1, int(w_half_1 /2), h_half_1])
+    listPos[2][1] = wp.Rect().set([int(w_half_1   ), h_half_1, int(w_half_1 /2), h_half_1])
+    listPos[2][2] = wp.Rect().set([int(w_half_1 /2), h_half_1, int(w_half_1   ), h_half_1])
+    listPos[3] = 3* [None]
+    listPos[3][0] = wp.Rect().set([w_half_1 -margin_w         , h_half_1, int(w_half_1 /2)+margin_w, h_half_1+margin_h])
+    listPos[3][1] = wp.Rect().set([w_half_1 + int(w_half_1 /2), h_half_1, int(w_half_1 /2)         , h_half_1+margin_h])
+    listPos[3][2] = wp.Rect().set([w_half_1 -margin_w         , h_half_1, int(w_half_1   )+margin_w, h_half_1+margin_h])
+    listPos[4] = 3* [None]
+    listPos[4][0] = wp.Rect().set([0               , 0, int(w_half_1 /2), h_half_1*2])
+    listPos[4][1] = wp.Rect().set([int(w_half_1 /2), 0, int(w_half_1 /2), h_half_1*2])
+    listPos[4][2] = wp.Rect().set([0               , 0, int(w_half_1   ), h_half_1*2])
+    listPos[6] = 3* [None]
+    listPos[6][0] = wp.Rect().set([w_half_1 -margin_w         , 0, int(w_half_1 /2)+margin_w, h_half_1*2])
+    listPos[6][1] = wp.Rect().set([w_half_1 + int(w_half_1 /2), 0, int(w_half_1 /2)         , h_half_1*2])
+    listPos[6][2] = wp.Rect().set([w_half_1 -margin_w         , 0, int(w_half_1   )+margin_w, h_half_1*2])
+    listPos[7] = 3* [None]
+    listPos[7][0] = wp.Rect().set([0               , 0, int(w_half_1 /2)+margin_w, h_half_1+margin_h])
+    listPos[7][1] = wp.Rect().set([int(w_half_1 /2), 0, int(w_half_1 /2)+margin_w, h_half_1+margin_h])
+    listPos[7][2] = wp.Rect().set([0               , 0, int(w_half_1   )+margin_w, h_half_1+margin_h])
+    listPos[8] = 3* [None]
+    listPos[8][0] = wp.Rect().set([int(w_half_1 /2), 0, int(w_half_1 /2), h_half_1])
+    listPos[8][1] = wp.Rect().set([int(w_half_1   ), 0, int(w_half_1 /2), h_half_1])
+    listPos[8][2] = wp.Rect().set([int(w_half_1 /2), 0, int(w_half_1   ), h_half_1])
+    listPos[9] = 3* [None]
+    listPos[9][0] = wp.Rect().set([w_half_1 -margin_w         , 0, int(w_half_1 /2)+margin_w, h_half_1+margin_h])
+    listPos[9][1] = wp.Rect().set([w_half_1 + int(w_half_1 /2), 0, int(w_half_1 /2)         , h_half_1+margin_h])
+    listPos[9][2] = wp.Rect().set([w_half_1 -margin_w         , 0, int(w_half_1   )+margin_w, h_half_1+margin_h])
 
 listMovedWin = []
 def ui_resizer(sys_tray, key):
@@ -388,8 +394,8 @@ def ui_resizer(sys_tray, key):
         if find_win["key"] != key:
             find_win["key"] = key
             find_win["key_count"] = 0
-
-        if find_win["key_count"] == 3:      # return original position
+        len = listPos[idx].__len__()
+        if find_win["key_count"] == len:      # return original position
             listMovedWin.remove(find_win)
             new_pos = find_win["pos"]
         else:
@@ -399,7 +405,7 @@ def ui_resizer(sys_tray, key):
         return new_pos
 
     new_pos = wp.Rect()
-    if key >= win32con.VK_NUMPAD1 and key <= win32con.VK_NUMPAD9 :
+    if key >= win32con.VK_NUMPAD0 and key <= win32con.VK_NUMPAD9 :
         new_pos = ui_move_position(key - win32con.VK_NUMPAD0)
 
     if not new_pos.is_empty():
