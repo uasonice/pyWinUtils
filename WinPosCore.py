@@ -6,6 +6,7 @@ import win32gui
 import win32con
 import sys
 import ctypes
+import os
 
 
 class Point:
@@ -275,6 +276,11 @@ def winpos_main(windata: WinData, cmd: str):
     if cmd == "save":        # 저장
         windata.PreSave()
         win32gui.EnumWindows(cbWinSave, windata)
+        if os.path.exists(datafile):
+            file_backup = datafile + ".backup"
+            if os.path.exists(file_backup):
+                os.remove(file_backup)
+            os.rename(datafile, file_backup)
         with open(datafile, 'w') as outfile:
             json.dump(windata.list, outfile, indent=4)
         windata.ShowWinInfo()
