@@ -292,7 +292,7 @@ def main(argv):
     windata = WinData()
     cmd = "show"
 
-    if len(argv) is 1:
+    if len(argv) == 1:
         print("needed command option")
         print("default cmd: %s"% cmd)
     else:
