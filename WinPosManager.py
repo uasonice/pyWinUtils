@@ -7,6 +7,7 @@ from io import StringIO
 import datetime
 import os, sys
 import tkinter as tk
+import threading
 
 import SysRegEdit
 import SysRunAdmin
@@ -70,9 +71,7 @@ class WinPosManager(wp.WinData):
 
 	def config_load(self):
 		conf = self.init2()
-		self.wg_str_profile_name.set(self.get_profile_name)
-		#print("coredata: profile(%s)" % self.get_profile_name)
-		#print("config_load: profile(%s)" % (self.wg_str_profile_name.get()))
+		self.wg_str_profile_name.set(self.profile_name)
 		if conf and conf.get('manager'):
 			pos = conf['manager']['pos']
 			self.m_width =  pos['w']
@@ -196,9 +195,15 @@ class WinPosManager(wp.WinData):
 		frame1.pack(fill=tk.X)
 		lbl1 = tk.Label(frame1, text="Profile: ", width=6)
 		lbl1.pack(side=tk.LEFT, padx=2, pady=2)
-
 		entry1 = tk.Entry(frame1, width=13, textvariable=self.wg_str_profile_name)
 		entry1.pack(side=tk.LEFT, fill=tk.X, padx=10)
+		def handle_event(event):
+			profile_name = win_mgr.wg_str_profile_name.get()
+			if not profile_name:
+				win_mgr.wg_str_profile_name.set(win_mgr.profile_name)
+				return
+			win_mgr.profile_name = profile_name
+		entry1.bind("<FocusOut>", handle_event)
 
 		frame2 = tk.Frame(root)
 		frame2.pack(fill=tk.X)
@@ -272,23 +277,27 @@ class WinPosManager(wp.WinData):
 			self.wg_log_msg.config(state=tk.DISABLED)
 
 
-def button_pressed(mgr, cmd):
+def button_pressed(mgr: WinPosManager, cmd):
 	stdout = sys.stdout
-	str = mgr.wg_str_profile_name.get()
-	if str == "": str = "data"
-	print("profile: %s" % str)
-	mgr.set_log_message(True, "%s %s" % (cmd, str))
-	mgr.set_profile_name(str)
+	if mgr.is_ui_show:
+		profile_name = mgr.wg_str_profile_name.get()
+	else:
+		profile_name = mgr.profile_name
+	if not profile_name:
+		profile_name = "data"
+		mgr.profile_name = profile_name
+	print("profile: %s" % profile_name)
+	if mgr.is_ui_show:
+		mgr.set_log_message(True, "%s %s" % (cmd, profile_name))
 	if cmd == "show":
 		sys.stdout = buffer = StringIO()
 	wp.winpos_main(mgr, cmd)
-	#wp.main(["WinPosCore", cmd])
 	if cmd == "show":
 		sys.stdout = stdout
 		mgr.popupmsg(buffer.getvalue())
-	if cmd == "save":
+	if mgr.is_ui_show and cmd == "save":
 		mgr.set_log_message(False, "cnt: %03d, cntExclude: %03d" % (mgr.cnt, mgr.cntExclude))
-	if len(mgr.logging_message) > 0:
+	if mgr.is_ui_show and len(mgr.logging_message) > 0:
 		mgr.set_log_message(False, mgr.logging_message)
 		mgr.logging_message = ''
 
@@ -457,7 +466,7 @@ def enableHotkey():
 	try:
 		hk.register(('super', 'control', 'z'), callback=lambda ev: button_pressed(win_mgr, 'load'))
 		hk.register(('super', 'control', 'x'), callback=lambda ev: button_pressed(win_mgr, 'save'))
-		hk.register(('super', 'control', 'a'), callback=lambda ev: ui_show(ev, False))
+		# hk.register(('super', 'control', 'a'), callback=lambda ev: ui_show(ev, False))
 		hk.register(('super', 'control', 'kp_0'), callback=lambda ev: ui_resizer(ev, win32con.VK_NUMPAD0))
 		hk.register(('super', 'control', 'kp_1'), callback=lambda ev: ui_resizer(ev, win32con.VK_NUMPAD1))
 		hk.register(('super', 'control', 'k'), callback=lambda ev: ui_resizer(ev, win32con.VK_NUMPAD2))

@@ -79,7 +79,7 @@ class Rect(Point):
 
 
 class WinData(object):
-    profile_name: object
+    _profile_name: object
     logging_message: str
 
     def __init__(self):
@@ -95,7 +95,7 @@ class WinData(object):
 
         # config data information
         self.change_config = False
-        self.profile_name = "data"
+        self._profile_name = "data"
         self.dumpinfo = False   # dump process simple information.
 
         # exclude App. list
@@ -107,13 +107,14 @@ class WinData(object):
         return self.load_config()
 
     @property
-    def get_profile_name(self):
-        return self.profile_name
+    def profile_name(self):
+        return self._profile_name
 
-    def set_profile_name(self, str):
-        if self.profile_name == str: return
+    @profile_name.setter
+    def profile_name(self, str):
+        if self._profile_name == str: return
         self.change_config = True
-        self.profile_name = str
+        self._profile_name = str
 
     def ExcludeWinName(self, hwnd, title: str, pos):
         if win32gui.IsWindowEnabled(hwnd) == False:
@@ -227,7 +228,7 @@ class WinData(object):
 
         conf = {
             "config_version":   self.version,
-            "profile_name":     self.profile_name,
+            "profile_name":     self._profile_name,
             "username":         "login username",
         }
         if len(p_conf) > 0:
@@ -243,7 +244,7 @@ class WinData(object):
             json_data = open(self.m_conf_file, encoding='utf-8').read()
             conf = json.loads(json_data)
             print("load config\n", conf)
-            self.profile_name = conf['profile_name']
+            self._profile_name = conf['profile_name']
             #print(conf['profile_name'])
         except FileNotFoundError as e:
             self.save_config(True)
@@ -271,7 +272,7 @@ def winpos_main(windata: WinData, cmd: str):
         return 0
 
     screen = windata.get_window_screen()
-    datafile = "winpos_%s_%dx%d.json" % (windata.profile_name, screen[0], screen[1])
+    datafile = "winpos_%s_%dx%d.json" % (windata._profile_name, screen[0], screen[1])
     print("datafile name: %s" % datafile)
     if cmd == "save":        # 저장
         windata.PreSave()
