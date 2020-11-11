@@ -78,6 +78,38 @@ class Rect(Point):
 		return dict(x=self.x, y=self.y, w=self.w, h=self.h)
 
 
+class AppFinder:
+	def __init__(self):
+		self.listApp = []
+		self.setEnum()
+
+	@staticmethod
+	def enumHandler(hwnd, lwindow):
+		if win32gui.IsWindowVisible(hwnd):
+			lwindow.append((win32gui.GetWindowText(hwnd), win32gui.GetClassName(hwnd), hwnd))
+
+	def setEnum(self):
+		self.listApp = []
+		win32gui.EnumWindows(self.enumHandler, self.listApp)
+
+	def find_hwnd(self, idx, v):
+		if isinstance(v, int):
+			for next_window in self.listApp:
+				if v == next_window[idx]:
+					return next_window[2]
+		else:
+			for next_window in self.listApp:
+				if v in next_window[idx]:
+					return next_window[2]
+		return None
+
+	def find_by_title(self, name):
+		return self.find_hwnd(0, name)
+
+	def find_by_class(self, classname):
+		return self.find_hwnd(1, classname)
+
+
 class WinData(object):
 	_profile_name: object
 	logging_message: str
@@ -121,6 +153,8 @@ class WinData(object):
 			return True
 		if win32gui.IsWindowVisible(hwnd) == False:
 			return True
+		if "~" == title:
+			return False
 		if (2 > len(title)): # 제목이 없거나 1자인 경우
 			return True
 		if (100 > pos.w + pos.h):   # 넓이 + 높이가 100 미만인 경우
@@ -200,10 +234,23 @@ class WinData(object):
 			print("no found winpos info file: %s" % data)
 			return
 
+		listApp = AppFinder()
 		cnt = 0
 		uflag = win32con.SWP_NOZORDER
+		def setPos(d, hwnd):
+			pos = Rect.set(Rect(), d['pos'])
+			try:
+				win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, pos.x, pos.y, pos.w, pos.h, uflag)
+			except:
+				self.printinfo("Exception %08X Window %s(%2d):" % (d['hwnd'], d['title'], len(d['title'])))
+			self.printinfo("%08X [%s]: %d (%d, %d) - Size: (%d, %d)" % (d['hwnd'], d['title'], cnt, pos.x, pos.y, pos.w, pos.h))
+
 		for d in self.list:
 			cnt += 1
+			hwnd = listApp.find_hwnd(2, d['hwnd'])
+			if hwnd:
+				setPos(d, hwnd)
+				continue
 			hwnd = win32gui.FindWindow(None, d['title'])
 			if not hwnd:
 				err_msg = "Removed or Changed %08X Window %s(%2d):" % (d['hwnd'], d['title'], len(d['title']))
@@ -211,14 +258,7 @@ class WinData(object):
 				print(err_msg)
 				#continue
 				hwnd = d['hwnd']
-			pos = Rect.set(Rect(), d['pos'])
-			try:
-				win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, pos.x, pos.y, pos.w, pos.h, uflag)
-			except:
-				self.printinfo("Exception %08X Window %s(%2d):" % (d['hwnd'], d['title'], len(d['title'])))
-
-			self.printinfo("%08X [%s]: %d (%d, %d) - Size: (%d, %d)" % (d['hwnd'], d['title'], \
-				cnt, pos.x, pos.y, pos.w, pos.h))
+			setPos(d, hwnd)
 		return
 
 	def save_config(self, forced: bool=False, p_conf=''):
